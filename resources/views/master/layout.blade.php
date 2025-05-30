@@ -150,7 +150,7 @@
           </button> --}}
           <div class="navbar-brand-wrapper">
             <a class="navbar-brand brand-logo" href="index.html"><img src="{{ asset('images/smarttap.png') }}" alt="logo" style="max-height: 70px;">
-                <h4 class="font-weight-bold mb-0 d-none d-md-block mt-1 text-white">Welcome back, Aidrina</h4>
+                <h4 class="font-weight-bold mb-0 d-none d-md-block mt-1 text-white">Welcome back, Aisyah</h4>
 
             </a>
             <a class="navbar-brand brand-logo-mini" href="index.html"><img src="images/smarttap.png" alt="logo"/></a>
