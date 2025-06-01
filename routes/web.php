@@ -5,9 +5,9 @@ use App\Http\Controllers\API\CardController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+
+Route::get('/admin/home', [AdminController::class, 'home'])->name('admin.home');
+
 
 Route::get('/cards', [CardController::class, 'index'])->name('cards.index');
 Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');

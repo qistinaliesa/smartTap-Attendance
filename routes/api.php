@@ -4,6 +4,9 @@ use App\Http\Controllers\API\AttendanceController;
 use App\Http\Controllers\API\CardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+Route::get('/', function () {
+    return view('admin.home');
+})->name('home');
 
 // API test route
 Route::get('/', function () {

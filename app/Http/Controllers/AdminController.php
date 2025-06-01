@@ -10,4 +10,9 @@ class AdminController extends Controller
     {
         return view('admin.home');
     }
+    public function home()
+{
+    // You can return a view or just a message for now
+    return view('admin.home'); // Make sure this view exists in resources/views/admin/home.blade.php
+}
 }

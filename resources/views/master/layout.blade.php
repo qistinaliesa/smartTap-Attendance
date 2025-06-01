@@ -34,7 +34,7 @@
           <span></span>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="index.html">
+            <a class="nav-link" href="{{ route('admin.home') }}">
             <i class="mdi mdi-view-quilt menu-icon"></i>
             <span class="menu-title">Dashboard</span>
             <div class="badge badge-info badge-pill">2</div>
@@ -58,24 +58,24 @@
             </ul>
           </div>
         </li> --}}
-        <li class="nav-item">
+        {{-- <li class="nav-item">
             <a class="nav-link" href="{{ route('form.elements') }}">
                 <i class="mdi mdi-view-headline menu-icon"></i>
                 <span class="menu-title">Lecturer Registration</span>
             </a>
-        </li>
+        </li> --}}
         <li class="nav-item">
             <a class="nav-link" href="{{ route('cards.index') }}">
                 <i class="mdi mdi-view-headline menu-icon"></i>
                 <span class="menu-title">Student Registration</span>
             </a>
         </li>
-        <li class="nav-item">
+        {{-- <li class="nav-item">
             <a class="nav-link" href="{{ route('form.elements') }}">
                 <i class="mdi mdi-view-headline menu-icon"></i>
                 <span class="menu-title">Course Registration</span>
             </a>
-        </li>
+        </li> --}}
         <li class="nav-item">
             <a class="nav-link" href="{{ route('attendance.index') }}">
                 <i class="mdi mdi-view-headline menu-icon"></i>

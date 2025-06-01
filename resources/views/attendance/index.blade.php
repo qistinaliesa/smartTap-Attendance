@@ -35,8 +35,32 @@
                     @endforelse
                 </tbody>
             </table>
+
+            <!-- Student Count Display -->
+            <div class="mt-3">
+                <div class="alert alert-info">
+                    <strong>Students Present:</strong> {{ count($formattedAttendances) }}{{ isset($totalStudents) ? '/' . $totalStudents : '' }}
+                </div>
+            </div>
+
+            <!-- Alternative: Simple text display -->
+            {{--
+            <div class="mt-3 text-right">
+                <p class="text-muted">
+                    <strong>Students Present: {{ count($formattedAttendances) }}</strong>
+                </p>
+            </div>
+            --}}
+
+            <!-- Alternative: Badge style -->
+            {{--
+            <div class="mt-3 text-center">
+                <span class="badge badge-primary badge-lg">
+                    Total Students: {{ count($formattedAttendances) }}
+                </span>
+            </div>
+            --}}
         </div>
     </div>
 </div>
 @endsection
-
