@@ -139,6 +139,7 @@ return [
         /*
          * Application Service Providers...
          */
+        App\Providers\AuthServiceProvider::class,
         App\Providers\AppServiceProvider::class,
         App\Providers\RouteServiceProvider::class, // ✅ Make sure this is here
     ],
