@@ -37,7 +37,7 @@ class LoginController extends Controller
         if (Auth::user()->utype == 'admin') {
             return redirect()->intended('/admin/home');
         } else {
-            return redirect()->intended('/lecturer/dashboard');
+            return redirect()->intended('/users/home');
         }
     }
 

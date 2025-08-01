@@ -18,10 +18,10 @@ Route::get('/', function () {
     if (Auth::check()) {
         return Auth::user()->utype === 'admin'
             ? redirect('/admin/home')
-            : redirect('/lecturer/dashboard');
+            : redirect('/users/home');
     }
     return redirect('/login');
-})->name('home');
+})->name('users.home');
 
 // Guest routes (unauthenticated users)
 Route::middleware('guest')->group(function () {
@@ -39,12 +39,12 @@ Route::middleware('auth')->group(function () {
     });
 
     // Lecturer-only dashboard
-    Route::get('/lecturer/dashboard', function () {
+    Route::get('/users/home', function () {
         if (Auth::user()->utype !== 'user') {
             abort(403, 'Access denied');
         }
-        return view('lecturer.dashboard');
-    })->name('lecturer.dashboard');
+        return view('users.home');
+    })->name('users.home');
 
     // Logout
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
