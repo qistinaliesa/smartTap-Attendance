@@ -6,6 +6,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\API\AttendanceController;
 use App\Http\Controllers\API\CardController;
+// use App\Http\Controllers\Admin\LecturerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,6 +51,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });
 
+
+
+
+
 // Public routes (not restricted by role)
 Route::get('/cards', [CardController::class, 'index'])->name('cards.index');
 Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
@@ -57,7 +62,8 @@ Route::get('/attendance', [AttendanceController::class, 'index'])->name('attenda
 // Demo/UI pages
 Route::view('/basic-table', 'pages.basic-table')->name('basic.table');
 Route::view('/chartjs', 'pages.chartjs')->name('chartjs');
-Route::view('/basic_elements', 'pages.basic_elements')->name('form.elements');
+Route::view('/lecturer-page', 'admin.lecturer')->name('form.elements');
+
 Route::view('/mdi', 'pages.mdi')->name('mdi');
 Route::view('/buttons', 'pages.buttons')->name('buttons');
 Route::view('/typography', 'pages.typography')->name('typography');

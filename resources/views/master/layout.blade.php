@@ -58,30 +58,30 @@
             </ul>
           </div>
         </li> --}}
-        {{-- <li class="nav-item">
+        <li class="nav-item">
             <a class="nav-link" href="{{ route('form.elements') }}">
                 <i class="mdi mdi-view-headline menu-icon"></i>
                 <span class="menu-title">Lecturer Registration</span>
             </a>
-        </li> --}}
+        </li>
         <li class="nav-item">
             <a class="nav-link" href="{{ route('cards.index') }}">
                 <i class="mdi mdi-view-headline menu-icon"></i>
                 <span class="menu-title">Student Registration</span>
             </a>
         </li>
-        {{-- <li class="nav-item">
+         <li class="nav-item">
             <a class="nav-link" href="{{ route('form.elements') }}">
                 <i class="mdi mdi-view-headline menu-icon"></i>
                 <span class="menu-title">Course Registration</span>
             </a>
-        </li> --}}
-        <li class="nav-item">
+        </li>
+        {{-- <li class="nav-item">
             <a class="nav-link" href="{{ route('attendance.index') }}">
                 <i class="mdi mdi-view-headline menu-icon"></i>
                 <span class="menu-title">Attendance</span>
             </a>
-        </li>
+        </li> --}}
         <li class="nav-item">
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
