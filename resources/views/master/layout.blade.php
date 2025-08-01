@@ -82,6 +82,15 @@
                 <span class="menu-title">Attendance</span>
             </a>
         </li>
+        <li class="nav-item">
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="nav-link btn btn-link">
+                    <i class="mdi mdi-logout menu-icon"></i>
+                    <span class="menu-title">Logout</span>
+                </button>
+            </form>
+        </li>
         {{-- <li class="nav-item">
             <a class="nav-link" href="{{ route('chartjs') }}">
                 <i class="mdi mdi-chart-pie menu-icon"></i>
@@ -108,7 +117,7 @@
         <li class="nav-item">
           <a class="nav-link" data-toggle="collapse" href="#auth" aria-expanded="false" aria-controls="auth">
             <i class="mdi mdi-account menu-icon"></i>
-            <span class="menu-title">Logout</span>
+            <span class="menu-title">Other</span>
             <i class="menu-arrow"></i>
           </a>
           <div class="collapse" id="auth">
