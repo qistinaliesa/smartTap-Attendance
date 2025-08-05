@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Lecturer;
 use Illuminate\Support\Facades\Hash;
 
-class LecturerController extends Controllers
+class LecturerController extends Controller
 {
     public function create()
     {
