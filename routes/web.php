@@ -14,6 +14,7 @@ use App\Http\Controllers\CourseController;
 | Web Routes
 |--------------------------------------------------------------------------
 */
+
 // Add this temporarily to your routes file for debugging
 Route::get('/debug-user', function () {
     if (!Auth::check()) {
@@ -30,13 +31,20 @@ Route::get('/debug-user', function () {
     ]);
 })->middleware('auth');
 
-// Redirect root based on user type
+// Redirect root based on user type (updated to handle lecturers)
 Route::get('/', function () {
+    // Check lecturer authentication first
+    if (Auth::guard('lecturer')->check()) {
+        return redirect('/lecturer/dashboard');
+    }
+
+    // Then check regular user authentication (your original logic)
     if (Auth::check()) {
         return Auth::user()->utype === 'admin'
             ? redirect('/admin/home')
             : redirect('/users/home');
     }
+
     return redirect('/login');
 })->name('users.home');
 
@@ -46,7 +54,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'login']);
 });
 
-// Authenticated user routes
+// Authenticated user routes (regular users and admin)
 Route::middleware('auth')->group(function () {
 
     // Admin-only routes
@@ -79,7 +87,7 @@ Route::middleware('auth')->group(function () {
     // POST: Handle form submission
     Route::post('/lecturer-registration', [LecturerController::class, 'register'])->name('lecturer.register');
 
-    // Lecturer-only dashboard
+    // Regular user dashboard
     Route::get('/users/home', function () {
         if (Auth::user()->utype !== 'user') {
             abort(403, 'Access denied');
@@ -87,21 +95,38 @@ Route::middleware('auth')->group(function () {
         return view('users.home');
     })->name('users.home');
 
-    // Logout
+    // Logout (updated to handle both guards)
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+});
+
+// Lecturer-only routes (using lecturer guard)
+Route::middleware(['lecturer.auth'])->prefix('lecturer')->group(function () {
+    Route::get('/dashboard', function () {
+        return view('users.home');
+    })->name('lusers.home');
+
+    // Add more lecturer-specific routes here as needed
+    // Route::get('/profile', function () {
+    //     $lecturer = Auth::guard('lecturer')->user();
+    //     return view('lecturer.profile', compact('lecturer'));
+    // })->name('lecturer.profile');
+
+    // Lecturer course management (if different from admin)
+    // Route::get('/courses', [LecturerCourseController::class, 'index'])->name('lecturer.courses');
+    // Route::get('/students', [LecturerStudentController::class, 'index'])->name('lecturer.students');
 });
 
 // Public routes (not restricted by role)
 Route::get('/cards', [CardController::class, 'index'])->name('cards.index');
 Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
 
-// Lecturer dashboard
-Route::get('/lecturer/dashboard', function () {
-    if (Auth::user()->utype !== 'lecturer') {
-        abort(403, 'Access denied');
-    }
-    return view('lecturer.dashboard');
-})->middleware('auth')->name('lecturer.dashboard');
+// Remove the old lecturer dashboard route since it's now handled above
+// Route::get('/lecturer/dashboard', function () {
+//     if (Auth::user()->utype !== 'lecturer') {
+//         abort(403, 'Access denied');
+//     }
+//     return view('lecturer.dashboard');
+// })->middleware('auth')->name('lecturer.dashboard');
 
 // Demo/UI pages
 Route::view('/basic-table', 'pages.basic-table')->name('basic.table');

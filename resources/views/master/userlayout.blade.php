@@ -58,24 +58,7 @@
             </ul>
           </div>
         </li>
-        {{-- <li class="nav-item">
-            <a class="nav-link" href="{{ route('form.elements') }}">
-                <i class="mdi mdi-view-headline menu-icon"></i>
-                <span class="menu-title">Lecturer Registration</span>
-            </a>
-        </li> --}}
-        {{-- <li class="nav-item">
-            <a class="nav-link" href="{{ route('cards.index') }}">
-                <i class="mdi mdi-view-headline menu-icon"></i>
-                <span class="menu-title">Student Registration</span>
-            </a>
-        </li> --}}
-        {{-- <li class="nav-item">
-            <a class="nav-link" href="{{ route('form.elements') }}">
-                <i class="mdi mdi-view-headline menu-icon"></i>
-                <span class="menu-title">Course Registration</span>
-            </a>
-        </li> --}}
+
         <li class="nav-item">
             <a class="nav-link" href="{{ route('attendance.index') }}">
                 <i class="mdi mdi-view-headline menu-icon"></i>
@@ -91,25 +74,7 @@
                 </button>
             </form>
         </li>
-        {{-- <li class="nav-item">
-            <a class="nav-link" href="{{ route('chartjs') }}">
-                <i class="mdi mdi-chart-pie menu-icon"></i>
-                <span class="menu-title">Charts</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{{ route('basic.table') }}">
-                <i class="mdi mdi-grid-large menu-icon"></i>
-                <span class="menu-title">Tables</span>
-            </a>
-        </li> --}}
 
-        {{-- <li class="nav-item">
-            <a class="nav-link" href="{{ route('mdi') }}">
-            <i class="mdi mdi-emoticon menu-icon"></i>
-            <span class="menu-title">Icons</span>
-          </a>
-        </li> --}}
         <li class="nav-item sidebar-category">
           <p>Pages</p>
           <span></span>
@@ -130,21 +95,7 @@
             </ul>
           </div>
         </li>
-        {{-- <li class="nav-item sidebar-category">
-          <p>Apps</p>
-          <span></span>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="docs/documentation.html">
-            <i class="mdi mdi-file-document-box-outline menu-icon"></i>
-            <span class="menu-title">Documentation</span>
-          </a>
-        </li> --}}
-        {{-- <li class="nav-item">
-          <a class="nav-link" href="http://www.bootstrapdash.com/demo/spica/template/">
-            <button class="btn bg-danger btn-sm menu-title">Upgrade to pro</button>
-          </a>
-        </li> --}}
+
       </ul>
     </nav>
     <!-- partial -->
