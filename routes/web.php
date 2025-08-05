@@ -6,7 +6,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\API\AttendanceController;
 use App\Http\Controllers\API\CardController;
-use App\Http\Controllers\Admin\LecturerController;
+use App\Http\Controllers\LecturerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,6 +28,7 @@ Route::get('/debug-user', function () {
         'is_admin_check' => $user->utype === 'admin'
     ]);
 })->middleware('auth');
+
 // Redirect root based on user type
 Route::get('/', function () {
     if (Auth::check()) {
@@ -61,6 +62,12 @@ Route::middleware('auth')->group(function () {
         Route::delete('/admin/lecturers/{lecturer}', [LecturerController::class, 'destroy'])->name('admin.lecturer.destroy');
     });
 
+    // GET: Show form and list
+    Route::get('/lecturer-registration', [LecturerController::class, 'showRegistrationForm'])->name('lecturer.register.form');
+
+    // POST: Handle form submission
+    Route::post('/lecturer-registration', [LecturerController::class, 'register'])->name('lecturer.register');
+
     // Lecturer-only dashboard
     Route::get('/users/home', function () {
         if (Auth::user()->utype !== 'user') {
@@ -73,18 +80,22 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });
 
-
-
-
-
 // Public routes (not restricted by role)
 Route::get('/cards', [CardController::class, 'index'])->name('cards.index');
 Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+// Lecturer dashboard
+Route::get('/lecturer/dashboard', function () {
+    if (Auth::user()->utype !== 'lecturer') {
+        abort(403, 'Access denied');
+    }
+    return view('lecturer.dashboard');
+})->middleware('auth')->name('lecturer.dashboard');
 
 // Demo/UI pages
 Route::view('/basic-table', 'pages.basic-table')->name('basic.table');
 Route::view('/chartjs', 'pages.chartjs')->name('chartjs');
-Route::view('/lecturer-registration', 'admin.lecturer')->name('lecturer.register');
+// REMOVE THIS LINE - it's causing the conflict!
+// Route::view('/lecturer-registration', 'admin.lecturer')->name('lecturer.register');
 Route::view('/course-registration', 'admin.courses')->name('course.register');
 
 Route::view('/mdi', 'pages.mdi')->name('mdi');
