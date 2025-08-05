@@ -53,13 +53,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/home', [AdminController::class, 'home'])->name('admin.home');
         Route::get('/admin', [AdminController::class, 'dashboard'])->name('admin.dashboard');
      // Lecturer management routes
-        Route::get('/admin/lecturers', [LecturerController::class, 'index'])->name('admin.lecturer.index');
-        Route::get('/admin/lecturers/create', [LecturerController::class, 'create'])->name('admin.lecturer.create');
-        Route::post('/admin/lecturers', [LecturerController::class, 'store'])->name('admin.lecturer.store');
-        Route::get('/admin/lecturers/{lecturer}', [LecturerController::class, 'show'])->name('admin.lecturer.show');
-        Route::get('/admin/lecturers/{lecturer}/edit', [LecturerController::class, 'edit'])->name('admin.lecturer.edit');
-        Route::put('/admin/lecturers/{lecturer}', [LecturerController::class, 'update'])->name('admin.lecturer.update');
-        Route::delete('/admin/lecturers/{lecturer}', [LecturerController::class, 'destroy'])->name('admin.lecturer.destroy');
+          Route::get('/admin/lecturers', [LecturerController::class, 'index'])->name('admin.lecturer.index');
+    Route::get('/admin/lecturers/create', [LecturerController::class, 'create'])->name('admin.lecturer.create');
+    Route::post('/admin/lecturers', [LecturerController::class, 'store'])->name('admin.lecturer.store');
+    Route::get('/admin/lecturers/{lecturer}', [LecturerController::class, 'show'])->name('admin.lecturer.show');
+    Route::get('/admin/lecturers/{lecturer}/edit', [LecturerController::class, 'edit'])->name('admin.lecturer.edit');
+    Route::put('/admin/lecturers/{lecturer}', [LecturerController::class, 'update'])->name('admin.lecturer.update');
+    Route::delete('/admin/lecturers/{lecturer}', [LecturerController::class, 'destroy'])->name('admin.lecturer.destroy');
     });
 
     // GET: Show form and list
@@ -101,4 +101,5 @@ Route::view('/course-registration', 'admin.courses')->name('course.register');
 Route::view('/mdi', 'pages.mdi')->name('mdi');
 Route::view('/buttons', 'pages.buttons')->name('buttons');
 Route::view('/typography', 'pages.typography')->name('typography');
+
 

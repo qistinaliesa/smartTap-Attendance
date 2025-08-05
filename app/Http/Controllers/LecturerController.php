@@ -10,22 +10,27 @@ use Illuminate\Support\Facades\Validator;
 class LecturerController extends Controller
 {
     /**
-     * Show the lecturer registration form
+     * Display a listing of the resource.
      */
-    public function showRegistrationForm()
+   public function index()
 {
-    $lecturers = \App\Models\Lecturer::orderBy('created_at', 'desc')->get();
+    $lecturers = Lecturer::all();
     return view('admin.lecturer', compact('lecturers'));
 }
-
-
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        $lecturers = Lecturer::all();
+    return view('admin.lecturer', compact('lecturers'));
+    }
 
     /**
-     * Handle lecturer registration
+     * Store a newly created resource in storage.
      */
-    public function register(Request $request)
+    public function store(Request $request)
     {
-        // Validate the form data
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:lecturers',
@@ -35,7 +40,6 @@ class LecturerController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        // If validation fails, redirect back with errors
         if ($validator->fails()) {
             return redirect()->back()
                 ->withErrors($validator)
@@ -43,26 +47,125 @@ class LecturerController extends Controller
         }
 
         try {
-            // Create new lecturer record
             $lecturer = Lecturer::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'staff_id' => $request->staff_id,
                 'kulliyyah' => $request->kulliyyah,
                 'department' => $request->department,
-                'password' => Hash::make($request->password), // Hash the password
+                'password' => Hash::make($request->password),
             ]);
 
-            // Redirect with success message
             return redirect()->back()
-    ->with('success', 'Lecturer registered successfully!')
-    ->with('lecturer', $lecturer);
-
+                ->with('success', 'Lecturer registered successfully!')
+                ->with('lecturer', $lecturer);
         } catch (\Exception $e) {
-            // Handle any database errors
             return redirect()->back()
                 ->with('error', 'Failed to register lecturer. Please try again.')
                 ->withInput();
         }
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Lecturer $lecturer)
+    {
+        return view('admin.lecturer-show', compact('lecturer'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Lecturer $lecturer)
+    {
+        return response()->json($lecturer);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, Lecturer $lecturer)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:lecturers,email,' . $lecturer->id,
+            'staff_id' => 'nullable|string|max:255|unique:lecturers,staff_id,' . $lecturer->id,
+            'kulliyyah' => 'required|string|max:255',
+            'department' => 'required|string|max:255',
+            'password' => 'nullable|string|min:8|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $updateData = [
+                'name' => $request->name,
+                'email' => $request->email,
+                'staff_id' => $request->staff_id,
+                'kulliyyah' => $request->kulliyyah,
+                'department' => $request->department,
+            ];
+
+            // Only update password if provided
+            if ($request->filled('password')) {
+                $updateData['password'] = Hash::make($request->password);
+            }
+
+            $lecturer->update($updateData);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lecturer updated successfully!',
+                'lecturer' => $lecturer
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update lecturer. Please try again.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Lecturer $lecturer)
+    {
+        try {
+            $lecturer->delete();
+            return response()->json([
+                'success' => true,
+                'message' => 'Lecturer deleted successfully!'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete lecturer. Please try again.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Handle lecturer registration (for the registration form)
+     */
+    public function register(Request $request)
+    {
+         $lecturers = Lecturer::all();
+        return $this->store($request);
+    }
+
+    /**
+     * Show registration form
+     */
+    public function showRegistrationForm()
+    {
+        $lecturers = Lecturer::all();
+        return view('admin.lecturer', compact('lecturers'));
     }
 }

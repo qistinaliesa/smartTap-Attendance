@@ -18,7 +18,7 @@
     <!-- inject:css -->
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <!-- endinject -->
-
+<meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="shortcut icon" href="{{ asset('images/logosmart.png') }}" />
   </head>
 
