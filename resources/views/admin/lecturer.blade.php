@@ -11,9 +11,9 @@
             <p class="card-description">Register a new lecturer</p>
 
             <!-- Form Start -->
-            <form class="forms-sample" method="POST" action="{{ route('admin.lecturer.store') }}">
-              @csrf
 
+            {{-- <form method="POST" action="{{ route('lecturer.store') }}">
+                @csrf --}}
               <div class="form-group row">
                 <label class="col-sm-3 col-form-label">Full Name</label>
                 <div class="col-sm-9">
@@ -73,8 +73,11 @@
 
               <button type="submit" class="btn btn-primary mr-2">Submit</button>
               <button type="reset" class="btn btn-light">Cancel</button>
-            </form>
+
             <!-- Form End -->
+        {{-- </form> --}}
+
+
 
           </div>
         </div>

@@ -67,11 +67,7 @@
                   </button>
                 </div>
 
-                <div class="my-2 d-flex justify-content-between align-items-center">
-                    @if (Route::has('password.request'))
-                      <a href="{{ route('password.request') }}" class="auth-link text-black">Forgot password?</a>
-                    @endif
-                  </div>
+
 
 
               </form>

@@ -19,6 +19,7 @@ class AdminController extends Controller
     // You can return a view or just a message for now
     return view('admin.home'); // Make sure this view exists in resources/views/admin/home.blade.php
 }
+
 public function storeLecturer(Request $request)
 {
     $request->validate([
@@ -35,6 +36,10 @@ public function storeLecturer(Request $request)
     ]);
 
     return redirect()->back()->with('success', 'Lecturer registered successfully!');
+}public function showLecturerForm()
+{
+    $lecturers = User::where('utype', 'user')->get();
+    return view('admin.lecturer', compact('lecturers'));
 }
 
 }

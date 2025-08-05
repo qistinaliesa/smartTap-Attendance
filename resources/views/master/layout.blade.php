@@ -59,7 +59,7 @@
           </div>
         </li> --}}
         <li class="nav-item">
-            <a class="nav-link" href="{{ route('form.elements') }}">
+            <a class="nav-link" href="{{ route('lecturer.register') }}">
                 <i class="mdi mdi-view-headline menu-icon"></i>
                 <span class="menu-title">Lecturer Registration</span>
             </a>
@@ -71,7 +71,7 @@
             </a>
         </li>
          <li class="nav-item">
-            <a class="nav-link" href="{{ route('form.elements') }}">
+            <a class="nav-link" href="{{ route('course.register') }}">
                 <i class="mdi mdi-view-headline menu-icon"></i>
                 <span class="menu-title">Course Registration</span>
             </a>
