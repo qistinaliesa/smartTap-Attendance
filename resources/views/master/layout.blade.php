@@ -359,6 +359,8 @@
 <script src="{{ asset('js/chart.js') }}"></script>
 <script src="{{ asset('vendors/chart.js/Chart.min.js') }}"></script>
 <script src="../../js/file-upload.js"></script>
+<!-- Bootstrap JS (required for modal dismiss) -->
+
 </body>
 
 </html>

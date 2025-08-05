@@ -253,7 +253,8 @@
           </div>
 
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+<button type="button" class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
+
             <button type="submit" class="btn btn-primary">Update Lecturer</button>
           </div>
         </form>
@@ -323,7 +324,9 @@ document.addEventListener('DOMContentLoaded', function () {
         Swal.fire('Error!', 'Update failed.', 'error');
       });
   });
-
+  document.getElementById('cancelEditBtn').addEventListener('click', function () {
+    $('#editLecturerModal').modal('hide'); // jQuery method for Bootstrap 4
+  });
     // Delete lecturer functionality
     document.querySelectorAll('.delete-lecturer').forEach(button => {
         button.addEventListener('click', function() {
