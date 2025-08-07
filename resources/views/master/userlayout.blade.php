@@ -40,23 +40,17 @@
             <div class="badge badge-info badge-pill">2</div>
           </a>
         </li> --}}
-        <li class="nav-item sidebar-category">
+    <li class="nav-item sidebar-category">
           <p>Navigation</p>
-
           <span></span>
         </li>
+
+        <!-- Simple direct link to Classes - NO DROPDOWN -->
         <li class="nav-item">
-          <a class="nav-link" data-toggle="collapse" href="#ui-basic" aria-expanded="false" aria-controls="ui-basic">
-            <i class="mdi mdi-palette menu-icon"></i>
-            <span class="menu-title">Classes</span>
-            <i class="menu-arrow"></i>
-          </a>
-          <div class="collapse" id="ui-basic">
-            <ul class="nav flex-column sub-menu">
-              <li class="nav-item"> <a class="nav-link" href="{{ route('buttons') }}">Buttons</a></li>
-              <li class="nav-item"> <a class="nav-link" href="{{ route('typography') }}">Typography</a></li>
-            </ul>
-          </div>
+            <a class="nav-link" href="{{ route('lecturer.courses') }}">
+                <i class="mdi mdi-school menu-icon"></i>
+                <span class="menu-title">My Classes</span>
+            </a>
         </li>
 
         <li class="nav-item">
@@ -64,8 +58,9 @@
                 <i class="mdi mdi-view-headline menu-icon"></i>
                 <span class="menu-title">Attendance</span>
             </a>
-        </li>
-        <li class="nav-item">
+         </li>
+
+         <li class="nav-item">
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" class="nav-link btn btn-link">
@@ -73,7 +68,7 @@
                     <span class="menu-title">Logout</span>
                 </button>
             </form>
-        </li>
+         </li>
 
         <li class="nav-item sidebar-category">
           <p>Pages</p>

@@ -8,7 +8,7 @@ use App\Http\Controllers\API\AttendanceController;
 use App\Http\Controllers\API\CardController;
 use App\Http\Controllers\LecturerController;
 use App\Http\Controllers\CourseController;
-
+use App\Http\Controllers\LecturerCourseController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -110,7 +110,8 @@ Route::middleware(['lecturer.auth'])->prefix('lecturer')->group(function () {
     //     $lecturer = Auth::guard('lecturer')->user();
     //     return view('lecturer.profile', compact('lecturer'));
     // })->name('lecturer.profile');
-
+  Route::get('/courses', [LecturerCourseController::class, 'index'])->name('lecturer.courses');
+    Route::get('/courses/{course}', [LecturerCourseController::class, 'show'])->name('lecturer.course.show');
     // Lecturer course management (if different from admin)
     // Route::get('/courses', [LecturerCourseController::class, 'index'])->name('lecturer.courses');
     // Route::get('/students', [LecturerStudentController::class, 'index'])->name('lecturer.students');

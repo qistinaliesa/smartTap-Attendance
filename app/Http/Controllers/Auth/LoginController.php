@@ -34,6 +34,11 @@ class LoginController extends Controller
         $password = $request->password;
         $remember = $request->boolean('remember');
 
+        // IMPORTANT: Clear all existing authentication sessions first
+        Auth::logout();
+        Auth::guard('lecturer')->logout();
+        $request->session()->flush();
+
         // First, try to authenticate as a regular user
         if (Auth::attempt(['email' => $email, 'password' => $password], $remember)) {
             $request->session()->regenerate();
@@ -71,12 +76,35 @@ class LoginController extends Controller
      */
     public function logout(Request $request)
     {
-        // Logout from both guards
-        Auth::logout();
+        // Check which guard is currently authenticated and logout accordingly
+        if (Auth::guard('lecturer')->check()) {
+            Auth::guard('lecturer')->logout();
+        }
+
+        if (Auth::check()) {
+            Auth::logout();
+        }
+
+        // Clear the session completely
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        // Optional: Clear all session data
+        $request->session()->flush();
+
+        return redirect()->route('login');
+    }
+
+    /**
+     * Separate logout method for lecturers (optional but recommended)
+     */
+    public function lecturerLogout(Request $request)
+    {
         Auth::guard('lecturer')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+        $request->session()->flush();
 
         return redirect()->route('login');
     }
