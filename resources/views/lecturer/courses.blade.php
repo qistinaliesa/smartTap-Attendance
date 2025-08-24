@@ -13,13 +13,16 @@
                             <div class="row">
                                 @foreach($courses as $index => $course)
                                     <div class="col-md-4 mb-4">
-                                        <div class="course-card course-card-{{ $index % 6 + 1 }}">
-                                            <div class="course-content">
-                                                <h5 class="course-code">{{ $course->course_code }}</h5>
-                                                <p class="course-section">SEC {{ $course->section }}</p>
-                                                <small class="credit-hours">{{ $course->credit_hours }} Credit Hours</small>
+                                        {{-- Make the entire card clickable --}}
+                                        <a href="{{ route('lecturer.course.show', $course->id) }}" class="course-card-link">
+                                            <div class="course-card course-card-{{ $index % 6 + 1 }}">
+                                                <div class="course-content">
+                                                    <h5 class="course-code">{{ $course->course_code }}</h5>
+                                                    <p class="course-section">SEC {{ $course->section }}</p>
+                                                    <small class="credit-hours">{{ $course->credit_hours }} Credit Hours</small>
+                                                </div>
                                             </div>
-                                        </div>
+                                        </a>
                                     </div>
                                 @endforeach
                             </div>
@@ -40,6 +43,16 @@
 </div>
 
 <style>
+.course-card-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.course-card-link:hover {
+    text-decoration: none;
+    color: inherit;
+}
+
 .course-card {
     background: linear-gradient(135deg, #e3f2fd, #bbdefb);
     border-radius: 20px;

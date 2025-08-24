@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\Enrollment;
+use App\Models\Card;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -29,7 +31,7 @@ class LecturerCourseController extends Controller
     }
 
     /**
-     * Show details of a specific course assigned to the lecturer
+     * Show details of a specific course and enrolled students
      */
     public function show(Course $course)
     {
@@ -40,6 +42,14 @@ class LecturerCourseController extends Controller
             abort(403, 'You are not authorized to view this course.');
         }
 
-        return view('lecturer.course-detail', compact('course', 'lecturer'));
+        // Get enrolled students with their card information
+        $enrolledStudents = Enrollment::where('course_id', $course->id)
+                                    ->with(['card' => function($query) {
+                                        $query->select('id', 'uid', 'name', 'matric_id');
+                                    }])
+                                    ->get();
+
+        // Return the course-students view (not course-detail)
+        return view('lecturer.course-students', compact('course', 'lecturer', 'enrolledStudents'));
     }
 }

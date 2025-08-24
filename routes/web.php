@@ -9,11 +9,7 @@ use App\Http\Controllers\API\CardController;
 use App\Http\Controllers\LecturerController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\LecturerCourseController;
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-*/
+
 
 // Add this temporarily to your routes file for debugging
 Route::get('/debug-user', function () {
@@ -105,29 +101,16 @@ Route::middleware(['lecturer.auth'])->prefix('lecturer')->group(function () {
         return view('users.home');
     })->name('lusers.home');
 
-    // Add more lecturer-specific routes here as needed
-    // Route::get('/profile', function () {
-    //     $lecturer = Auth::guard('lecturer')->user();
-    //     return view('lecturer.profile', compact('lecturer'));
-    // })->name('lecturer.profile');
+
   Route::get('/courses', [LecturerCourseController::class, 'index'])->name('lecturer.courses');
     Route::get('/courses/{course}', [LecturerCourseController::class, 'show'])->name('lecturer.course.show');
-    // Lecturer course management (if different from admin)
-    // Route::get('/courses', [LecturerCourseController::class, 'index'])->name('lecturer.courses');
-    // Route::get('/students', [LecturerStudentController::class, 'index'])->name('lecturer.students');
+
 });
 
 // Public routes (not restricted by role)
 Route::get('/cards', [CardController::class, 'index'])->name('cards.index');
 Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
 
-// Remove the old lecturer dashboard route since it's now handled above
-// Route::get('/lecturer/dashboard', function () {
-//     if (Auth::user()->utype !== 'lecturer') {
-//         abort(403, 'Access denied');
-//     }
-//     return view('lecturer.dashboard');
-// })->middleware('auth')->name('lecturer.dashboard');
 
 // Demo/UI pages
 Route::view('/basic-table', 'pages.basic-table')->name('basic.table');
