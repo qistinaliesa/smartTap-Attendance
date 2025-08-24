@@ -186,6 +186,111 @@ class LecturerCourseController extends Controller
     }
 
     /**
+     * NEW: Show attendance overview/statistics for a course (like your Figma design)
+     */
+    public function showOverview($courseId)
+    {
+        $course = Course::findOrFail($courseId);
+        $lecturer = Auth::guard('lecturer')->user();
+
+        // Check if this course belongs to the authenticated lecturer
+        if ($course->lecturer_id !== $lecturer->id) {
+            abort(403, 'You are not authorized to view this course overview.');
+        }
+
+        // Get all enrollments for this course
+        $enrollments = Enrollment::where('course_id', $courseId)
+            ->with('card')
+            ->get();
+
+        $totalStudents = $enrollments->count();
+
+        if ($totalStudents == 0) {
+            return view('lecturer.course-overview', [
+                'course' => $course,
+                'studentsData' => [],
+                'totalStudents' => 0,
+                'averageAttendance' => 0,
+                'warnings' => 0
+            ]);
+        }
+
+        // Calculate attendance statistics for each student
+        $studentsData = [];
+        $totalAttendanceSum = 0;
+        $warnings = 0;
+
+        // Get the total number of classes (unique dates where attendance was taken)
+        $totalClasses = Attendance::where('course_id', $courseId)
+            ->distinct('date')
+            ->count();
+
+        // If no classes have been held yet, set a default or use enrollment date range
+        if ($totalClasses == 0) {
+            $totalClasses = 1; // Avoid division by zero
+        }
+
+        foreach ($enrollments as $index => $enrollment) {
+            if (!$enrollment->card) {
+                continue; // Skip if no card associated
+            }
+
+            // Get total attendance records for this student in this course
+            $attendanceCount = Attendance::where('course_id', $courseId)
+                ->where('card_id', $enrollment->card->id)
+                ->distinct('date') // Count unique dates only
+                ->count();
+
+            // Calculate attendance percentage
+            $attendancePercentage = ($attendanceCount / $totalClasses) * 100;
+
+            // Count absences
+            $absences = $totalClasses - $attendanceCount;
+
+            // Determine status and warning
+            $status = 'good';
+            $hasWarning = false;
+
+            if ($attendancePercentage < 50) {
+                $status = 'critical';
+                $hasWarning = true;
+                $warnings++;
+            } elseif ($attendancePercentage < 75) {
+                $status = 'cautious';
+                $hasWarning = true;
+            }
+
+            $studentsData[] = [
+                'no' => $index + 1,
+                'name' => $enrollment->card->name,
+                'matric_id' => $enrollment->card->matric_id,
+                'attendance_percentage' => round($attendancePercentage, 1),
+                'absences' => $absences,
+                'status' => $status,
+                'has_warning' => $hasWarning
+            ];
+
+            $totalAttendanceSum += $attendancePercentage;
+        }
+
+        // Calculate average attendance
+        $averageAttendance = $totalStudents > 0 ? round($totalAttendanceSum / $totalStudents, 1) : 0;
+
+        // Sort students by attendance percentage (lowest first to highlight problems)
+        usort($studentsData, function($a, $b) {
+            return $a['attendance_percentage'] <=> $b['attendance_percentage'];
+        });
+
+        return view('lecturer.course-overview', compact(
+            'course',
+            'studentsData',
+            'totalStudents',
+            'averageAttendance',
+            'warnings'
+        ));
+    }
+
+    /**
      * NEW: Show attendance history for a course (optional - for viewing past records)
      */
     public function showAttendanceHistory(Request $request, Course $course)

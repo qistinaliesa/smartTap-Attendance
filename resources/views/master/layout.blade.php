@@ -130,21 +130,7 @@
             </ul>
           </div>
         </li>
-        {{-- <li class="nav-item sidebar-category">
-          <p>Apps</p>
-          <span></span>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="docs/documentation.html">
-            <i class="mdi mdi-file-document-box-outline menu-icon"></i>
-            <span class="menu-title">Documentation</span>
-          </a>
-        </li> --}}
-        {{-- <li class="nav-item">
-          <a class="nav-link" href="http://www.bootstrapdash.com/demo/spica/template/">
-            <button class="btn bg-danger btn-sm menu-title">Upgrade to pro</button>
-          </a>
-        </li> --}}
+
       </ul>
     </nav>
     <!-- partial -->
@@ -267,48 +253,7 @@
             <span class="mdi mdi-menu"></span>
           </button>
         </div>
-        {{-- <div class="navbar-menu-wrapper navbar-search-wrapper d-none d-lg-flex align-items-center">
-          <ul class="navbar-nav mr-lg-2">
-            <li class="nav-item nav-search d-none d-lg-block">
-              <div class="input-group">
-                <input type="text" class="form-control" placeholder="Search Here..." aria-label="search" aria-describedby="search">
-              </div>
-            </li>
-          </ul>
-          <ul class="navbar-nav navbar-nav-right">
-            <li class="nav-item nav-profile dropdown">
-              <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" id="profileDropdown">
-                <img src="images/faces/face5.jpg" alt="profile"/>
-                <span class="nav-profile-name">Eleanor Richardson</span>
-              </a>
-              <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
-                <a class="dropdown-item">
-                  <i class="mdi mdi-settings text-primary"></i>
-                  Settings
-                </a>
-                <a class="dropdown-item">
-                  <i class="mdi mdi-logout text-primary"></i>
-                  Logout
-                </a>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a href="#" class="nav-link icon-link">
-                <i class="mdi mdi-plus-circle-outline"></i>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a href="#" class="nav-link icon-link">
-                <i class="mdi mdi-web"></i>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a href="#" class="nav-link icon-link">
-                <i class="mdi mdi-clock-outline"></i>
-              </a>
-            </li>
-          </ul>
-        </div> --}}
+
       </nav>
 
 

@@ -19,9 +19,20 @@
                                 </p>
                             </div>
                             <div class="d-flex gap-2">
+                                {{-- Download PDF Button --}}
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="downloadPDF()"
+                                        {{ count($formattedAttendances) == 0 ? 'disabled' : '' }}>
+                                    <i class="mdi mdi-file-pdf"></i> Download PDF
+                                </button>
+                                {{-- Export Excel Button --}}
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="exportExcel()"
+                                        {{ count($formattedAttendances) == 0 ? 'disabled' : '' }}>
+                                    <i class="mdi mdi-file-excel"></i> Export Excel
+                                </button>
                                 <a href="{{ route('lecturer.course.show', $course->id) }}" class="btn btn-outline-primary btn-sm">
                                     <i class="mdi mdi-arrow-left"></i> Back to Course
                                 </a>
+
                             </div>
                         </div>
 
@@ -58,7 +69,7 @@
 
                         {{-- Attendance Records Table --}}
                         <div class="table-responsive">
-                            <table class="table table-hover">
+                            <table class="table table-hover" id="attendanceTable">
                                 <thead class="thead-light">
                                     <tr>
                                         <th class="font-weight-bold">#</th>
@@ -148,18 +159,25 @@
                                     </div>
                                     <div class="card-body">
                                         <div class="row">
-                                            <div class="col-md-6">
+                                            <div class="col-md-4">
                                                 <h6><i class="mdi mdi-numeric-1-circle text-primary"></i> Automatic Tracking</h6>
                                                 <p class="text-muted mb-3">
                                                     Students tap their RFID cards on the reader to automatically mark attendance.
                                                     Records will appear in real-time on this page.
                                                 </p>
                                             </div>
-                                            <div class="col-md-6">
+                                            <div class="col-md-4">
                                                 <h6><i class="mdi mdi-numeric-2-circle text-primary"></i> Monitor Status</h6>
                                                 <p class="text-muted mb-3">
                                                     Refresh this page periodically to see updated attendance records.
                                                     The summary cards show present, total, and absent counts.
+                                                </p>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <h6><i class="mdi mdi-numeric-3-circle text-primary"></i> Export Records</h6>
+                                                <p class="text-muted mb-3">
+                                                    Download attendance records as PDF or Excel files for your records.
+                                                    Reports include course details and attendance summary.
                                                 </p>
                                             </div>
                                         </div>
@@ -174,6 +192,20 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Loading Modal --}}
+<div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <p class="mb-0">Generating report...</p>
             </div>
         </div>
     </div>
@@ -218,7 +250,21 @@
 .badge {
     font-size: 0.75em;
 }
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.spinner-border {
+    width: 2rem;
+    height: 2rem;
+}
 </style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
 $(document).ready(function() {
@@ -232,5 +278,190 @@ $(document).ready(function() {
         window.location.reload();
     }, 30000); // 30 seconds
 });
+
+// Function to download PDF
+function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Show loading modal
+    $('#loadingModal').modal('show');
+
+    setTimeout(function() {
+        try {
+            // Course information
+            const courseCode = '{{ $course->course_code }}';
+            const section = '{{ $course->section }}';
+            const creditHours = '{{ $course->credit_hours }}';
+            const currentDate = new Date().toLocaleDateString();
+            const attendanceDate = '{{ request()->get("date", date("Y-m-d")) }}';
+
+            // Header
+            doc.setFontSize(20);
+            doc.setTextColor(40);
+            doc.text('Attendance Report', 105, 20, { align: 'center' });
+
+            // Course details
+            doc.setFontSize(12);
+            doc.setTextColor(60);
+            doc.text(`Course: ${courseCode}`, 20, 35);
+            doc.text(`Section: ${section}`, 20, 45);
+            doc.text(`Credit Hours: ${creditHours}`, 20, 55);
+            doc.text(`Date: ${attendanceDate}`, 120, 35);
+            doc.text(`Generated: ${currentDate}`, 120, 45);
+
+            // Summary statistics
+            const presentCount = {{ count($formattedAttendances) }};
+            const totalCount = {{ $totalStudents }};
+            const absentCount = totalCount - presentCount;
+            const attendanceRate = totalCount > 0 ? ((presentCount / totalCount) * 100).toFixed(1) : 0;
+
+            doc.text(`Present: ${presentCount}`, 20, 70);
+            doc.text(`Absent: ${absentCount}`, 70, 70);
+            doc.text(`Total: ${totalCount}`, 120, 70);
+            doc.text(`Attendance Rate: ${attendanceRate}%`, 20, 80);
+
+            // Table data
+            const tableData = [];
+            @foreach ($formattedAttendances as $index => $attendance)
+                tableData.push([
+                    '{{ $index + 1 }}',
+                    '{{ $attendance["name"] }}',
+                    '{{ $attendance["matric_id"] }}',
+                    '{{ $attendance["date"] }}',
+                    '{{ $attendance["time_in"] }}',
+                    '{{ $attendance["time_out"] ?? "-" }}',
+                    'Present'
+                ]);
+            @endforeach
+
+            // Create table
+            if (tableData.length > 0) {
+                doc.autoTable({
+                    startY: 90,
+                    head: [['#', 'Name', 'Matric ID', 'Date', 'Time In', 'Time Out', 'Status']],
+                    body: tableData,
+                    theme: 'striped',
+                    headStyles: { fillColor: [52, 144, 220] },
+                    styles: { fontSize: 10, cellPadding: 3 },
+                    columnStyles: {
+                        0: { cellWidth: 10 },
+                        1: { cellWidth: 35 },
+                        2: { cellWidth: 25 },
+                        3: { cellWidth: 25 },
+                        4: { cellWidth: 20 },
+                        5: { cellWidth: 20 },
+                        6: { cellWidth: 20 }
+                    }
+                });
+            } else {
+                doc.setFontSize(12);
+                doc.setTextColor(150);
+                doc.text('No attendance records found for this date.', 105, 100, { align: 'center' });
+            }
+
+            // Footer
+            const pageHeight = doc.internal.pageSize.height;
+            doc.setFontSize(8);
+            doc.setTextColor(128);
+            doc.text('Generated by SmartTap Attendance System', 105, pageHeight - 10, { align: 'center' });
+
+            // Save the PDF
+            const fileName = `Attendance_${courseCode}_${section}_${attendanceDate.replace(/\//g, '-')}.pdf`;
+            doc.save(fileName);
+
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            alert('Error generating PDF. Please try again.');
+        } finally {
+            // Hide loading modal
+            $('#loadingModal').modal('hide');
+        }
+    }, 500);
+}
+
+// Function to export Excel
+function exportExcel() {
+    // Show loading modal
+    $('#loadingModal').modal('show');
+
+    setTimeout(function() {
+        try {
+            const courseCode = '{{ $course->course_code }}';
+            const section = '{{ $course->section }}';
+            const attendanceDate = '{{ request()->get("date", date("Y-m-d")) }}';
+
+            // Prepare data
+            const excelData = [];
+
+            // Add headers with course info
+            excelData.push(['Course Code:', courseCode]);
+            excelData.push(['Section:', section]);
+            excelData.push(['Credit Hours:', '{{ $course->credit_hours }}']);
+            excelData.push(['Date:', attendanceDate]);
+            excelData.push(['Generated:', new Date().toLocaleString()]);
+            excelData.push([]);
+
+            // Add summary
+            excelData.push(['ATTENDANCE SUMMARY']);
+            excelData.push(['Present:', {{ count($formattedAttendances) }}]);
+            excelData.push(['Absent:', {{ $totalStudents - count($formattedAttendances) }}]);
+            excelData.push(['Total Enrolled:', {{ $totalStudents }}]);
+            excelData.push(['Attendance Rate:', '{{ $totalStudents > 0 ? round((count($formattedAttendances) / $totalStudents) * 100, 1) : 0 }}%']);
+            excelData.push([]);
+
+            // Add table headers
+            excelData.push(['#', 'Name', 'Matric ID', 'Date', 'Time In', 'Time Out', 'Status']);
+
+            // Add attendance data
+            @foreach ($formattedAttendances as $index => $attendance)
+                excelData.push([
+                    {{ $index + 1 }},
+                    '{{ $attendance["name"] }}',
+                    '{{ $attendance["matric_id"] }}',
+                    '{{ $attendance["date"] }}',
+                    '{{ $attendance["time_in"] }}',
+                    '{{ $attendance["time_out"] ?? "-" }}',
+                    'Present'
+                ]);
+            @endforeach
+
+            // Create workbook and worksheet
+            const ws = XLSX.utils.aoa_to_sheet(excelData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+
+            // Style the worksheet (basic styling)
+            const range = XLSX.utils.decode_range(ws['!ref']);
+
+            // Auto-width columns
+            const colWidths = [];
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                let maxWidth = 10;
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                    const cell = ws[cellAddress];
+                    if (cell && cell.v) {
+                        const cellLength = cell.v.toString().length;
+                        maxWidth = Math.max(maxWidth, cellLength);
+                    }
+                }
+                colWidths[C] = { wch: Math.min(maxWidth + 2, 50) };
+            }
+            ws['!cols'] = colWidths;
+
+            // Save file
+            const fileName = `Attendance_${courseCode}_${section}_${attendanceDate.replace(/\//g, '-')}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+
+        } catch (error) {
+            console.error('Error generating Excel:', error);
+            alert('Error generating Excel file. Please try again.');
+        } finally {
+            // Hide loading modal
+            $('#loadingModal').modal('hide');
+        }
+    }, 500);
+}
 </script>
 @endsection
