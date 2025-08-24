@@ -101,22 +101,30 @@ Route::middleware(['lecturer.auth'])->prefix('lecturer')->group(function () {
         return view('users.home');
     })->name('lusers.home');
 
-
-  Route::get('/courses', [LecturerCourseController::class, 'index'])->name('lecturer.courses');
+    Route::get('/courses', [LecturerCourseController::class, 'index'])->name('lecturer.courses');
     Route::get('/courses/{course}', [LecturerCourseController::class, 'show'])->name('lecturer.course.show');
 
+    // Take attendance route
+    Route::get('/courses/{course}/take-attendance', [LecturerCourseController::class, 'takeAttendance'])->name('lecturer.course.take_attendance');
+
+    // Optional - View past attendance records
+    Route::get('/courses/{course}/attendance-history', [LecturerCourseController::class, 'showAttendanceHistory'])->name('lecturer.course.attendance_history');
+
+    // View individual student attendance
+    Route::get('/courses/{course}/student/{enrollment}/attendance', [LecturerCourseController::class, 'showStudentAttendance'])->name('lecturer.course.student_attendance');
 });
 
 // Public routes (not restricted by role)
 Route::get('/cards', [CardController::class, 'index'])->name('cards.index');
-Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
 
+// MOVED: General attendance route (separate from lecturer-specific attendance)
+Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
 
 // Demo/UI pages
 Route::view('/basic-table', 'pages.basic-table')->name('basic.table');
 Route::view('/chartjs', 'pages.chartjs')->name('chartjs');
 
-// Course registration route - CHANGED from Route::view to controller method
+// Course registration route
 Route::get('/course-registration', [CourseController::class, 'showRegistrationForm'])->name('course.register');
 Route::post('/course-registration', [CourseController::class, 'store'])->name('course.store');
 

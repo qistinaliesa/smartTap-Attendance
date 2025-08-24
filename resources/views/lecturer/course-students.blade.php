@@ -13,9 +13,45 @@
                                 <h4 class="card-title mb-1">{{ $course->course_code }} - Students</h4>
                                 <p class="text-muted mb-0">Section {{ $course->section }} | {{ $course->credit_hours }} Credit Hours</p>
                             </div>
-                            <a href="{{ route('lecturer.courses') }}" class="btn btn-outline-primary btn-sm">
-                                <i class="mdi mdi-arrow-left"></i> Back to Courses
-                            </a>
+                            <div class="d-flex gap-2">
+                                <!-- CHANGED: Take Attendance instead of View Attendance -->
+                                <button type="button" class="btn btn-outline-success btn-sm" data-toggle="modal" data-target="#attendanceDateModal">
+                                    <i class="mdi mdi-calendar-plus"></i> Take Attendance
+                                </button>
+                                <a href="{{ route('lecturer.courses') }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="mdi mdi-arrow-left"></i> Back to Courses
+                                </a>
+                            </div>
+                        </div>
+
+                        {{-- Date Picker Modal --}}
+                        <div class="modal fade" id="attendanceDateModal" tabindex="-1" role="dialog" aria-labelledby="attendanceDateModalLabel" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="attendanceDateModalLabel">Take Attendance</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="form-group">
+                                            <label for="attendanceDate">Choose Date:</label>
+                                            <input type="date" class="form-control" id="attendanceDate" value="{{ date('Y-m-d') }}">
+                                        </div>
+                                        <div class="text-center">
+                                            <small class="text-muted">Select a date to take attendance for {{ $course->course_code }}</small>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                        <!-- CHANGED: Take Attendance button -->
+                                        <button type="button" class="btn btn-success" onclick="takeAttendance()">
+                                            <i class="mdi mdi-calendar-plus"></i> Take Attendance
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         @if($enrolledStudents->count() > 0)
@@ -61,7 +97,7 @@
                                                 </td>
                                                 <td>
                                                     <div class="btn-group btn-group-sm" role="group">
-                                                        <button type="button" class="btn btn-outline-info" title="View Attendance">
+                                                        <button type="button" class="btn btn-outline-info" title="View Past Attendance" onclick="viewStudentAttendance({{ $enrollment->id }})">
                                                             <i class="mdi mdi-calendar-check"></i>
                                                         </button>
                                                         <button type="button" class="btn btn-outline-primary" title="View Profile">
@@ -148,5 +184,45 @@
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
 }
+
+.d-flex.gap-2 > * + * {
+    margin-left: 0.5rem;
+}
 </style>
+
+<script>
+// CHANGED: Function to take attendance (redirect to attendance page)
+function takeAttendance() {
+    console.log('takeAttendance function called');
+
+    const selectedDate = document.getElementById('attendanceDate').value;
+    const courseId = {{ $course->id }};
+
+    console.log('Selected date:', selectedDate);
+    console.log('Course ID:', courseId);
+
+    if (selectedDate) {
+        // CHANGED: Redirect to the attendance page to take attendance
+        const url = '/lecturer/courses/' + courseId + '/take-attendance?date=' + selectedDate;
+        console.log('Navigating to:', url);
+        window.location.href = url;
+    } else {
+        alert('Please select a date first.');
+    }
+}
+
+// NEW: Function to view individual student attendance history
+function viewStudentAttendance(enrollmentId) {
+    console.log('Viewing attendance for enrollment ID:', enrollmentId);
+    const courseId = {{ $course->id }};
+    const url = '/lecturer/courses/' + courseId + '/student/' + enrollmentId + '/attendance';
+    window.location.href = url;
+}
+
+// Document ready function
+$(document).ready(function() {
+    console.log('Document is ready');
+    console.log('jQuery version:', typeof $ !== 'undefined' ? $.fn.jquery : 'jQuery not loaded');
+});
+</script>
 @endsection

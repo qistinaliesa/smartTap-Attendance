@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Card;
+use App\Models\Attendance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class LecturerCourseController extends Controller
 {
@@ -51,5 +53,217 @@ class LecturerCourseController extends Controller
 
         // Return the course-students view (not course-detail)
         return view('lecturer.course-students', compact('course', 'lecturer', 'enrolledStudents'));
+    }
+
+    /**
+     * Show attendance for a specific course and date (existing method - kept for compatibility)
+     */
+    public function showAttendance(Course $course, Request $request)
+    {
+        $lecturer = Auth::guard('lecturer')->user();
+
+        // Check if this course belongs to the authenticated lecturer
+        if ($course->lecturer_id !== $lecturer->id) {
+            abort(403, 'You are not authorized to view this course attendance.');
+        }
+
+        // Get the selected date from the request, default to today
+        $selectedDate = $request->get('date', Carbon::today()->toDateString());
+
+        // Validate date format
+        try {
+            $date = Carbon::createFromFormat('Y-m-d', $selectedDate);
+        } catch (\Exception $e) {
+            $date = Carbon::today();
+            $selectedDate = $date->toDateString();
+        }
+
+        // Get all students enrolled in this course
+        $enrolledStudents = Enrollment::where('course_id', $course->id)
+                                    ->with(['card' => function($query) {
+                                        $query->select('id', 'uid', 'name', 'matric_id');
+                                    }])
+                                    ->get();
+
+        // Get the card IDs of enrolled students
+        $enrolledCardIds = $enrolledStudents->pluck('card.id')->filter();
+
+        // Get attendance records for the selected date for only enrolled students
+        $attendances = Attendance::whereIn('card_id', $enrolledCardIds)
+                                ->where('date', $selectedDate)
+                                ->with('card')
+                                ->get();
+
+        // Format attendance data
+        $formattedAttendances = $attendances->map(function ($attendance) {
+            return [
+                'id' => $attendance->id,
+                'name' => $attendance->card->name,
+                'matric_id' => $attendance->card->matric_id,
+                'date' => $attendance->date,
+                'time_in' => $attendance->time_in,
+                'time_out' => $attendance->time_out,
+            ];
+        });
+
+        // Get total number of enrolled students for context
+        $totalStudents = $enrolledStudents->count();
+
+        return view('lecturer.course-attendance', compact(
+            'course',
+            'formattedAttendances',
+            'totalStudents',
+            'selectedDate',
+            'lecturer'
+        ));
+    }
+
+    /**
+     * NEW: Show the take attendance page for a specific course and date
+     */
+    public function takeAttendance(Request $request, Course $course)
+    {
+        $lecturer = Auth::guard('lecturer')->user();
+
+        // Check if this course belongs to the authenticated lecturer
+        if ($course->lecturer_id !== $lecturer->id) {
+            abort(403, 'You are not authorized to take attendance for this course.');
+        }
+
+        // Validate the date parameter
+        $date = $request->input('date');
+        if (!$date) {
+            return redirect()->back()->with('error', 'Date is required to take attendance.');
+        }
+
+        // Validate date format
+        try {
+            $attendanceDate = Carbon::createFromFormat('Y-m-d', $date);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Invalid date format.');
+        }
+
+        // Get all students enrolled in this course
+        $enrolledStudents = Enrollment::where('course_id', $course->id)
+                                    ->with(['card' => function($query) {
+                                        $query->select('id', 'uid', 'name', 'matric_id');
+                                    }])
+                                    ->get();
+
+        // Get the card IDs of enrolled students
+        $enrolledCardIds = $enrolledStudents->pluck('card.id')->filter();
+
+        // Get existing attendance records for this date and course (only for enrolled students)
+        $existingAttendances = Attendance::whereIn('card_id', $enrolledCardIds)
+                                        ->where('date', $date)
+                                        ->with('card')
+                                        ->get();
+
+        // Format the attendance data for display (using your existing attendance view structure)
+        $formattedAttendances = $existingAttendances->map(function ($attendance) {
+            return [
+                'id' => $attendance->id,
+                'name' => $attendance->card->name ?? 'N/A',
+                'matric_id' => $attendance->card->matric_id ?? 'N/A',
+                'date' => $attendance->date,
+                'time_in' => $attendance->time_in,
+                'time_out' => $attendance->time_out ?? null,
+                'card_uid' => $attendance->card->uid ?? 'N/A'
+            ];
+        });
+
+        // Calculate totals
+        $totalStudents = $enrolledStudents->count();
+        $presentCount = $formattedAttendances->count();
+
+        // Return to your existing attendance view with the formatted data
+        // Update the view path to match your file structure
+        return view('lecturer.take-attendance', compact(
+            'formattedAttendances',
+            'course',
+            'totalStudents'
+        ));
+    }
+
+    /**
+     * NEW: Show attendance history for a course (optional - for viewing past records)
+     */
+    public function showAttendanceHistory(Request $request, Course $course)
+    {
+        $lecturer = Auth::guard('lecturer')->user();
+
+        // Check authorization
+        if ($course->lecturer_id !== $lecturer->id) {
+            abort(403, 'You are not authorized to view this course attendance history.');
+        }
+
+        $startDate = $request->input('start_date', Carbon::now()->subMonth()->format('Y-m-d'));
+        $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+
+        // Get enrolled students
+        $enrolledStudents = Enrollment::where('course_id', $course->id)
+                                    ->with(['card' => function($query) {
+                                        $query->select('id', 'uid', 'name', 'matric_id');
+                                    }])
+                                    ->get();
+
+        $enrolledCardIds = $enrolledStudents->pluck('card.id')->filter();
+
+        // Get attendance records within date range
+        $attendances = Attendance::whereIn('card_id', $enrolledCardIds)
+                                ->whereBetween('date', [$startDate, $endDate])
+                                ->with('card')
+                                ->orderBy('date', 'desc')
+                                ->orderBy('time_in', 'desc')
+                                ->get();
+
+        $formattedAttendances = $attendances->map(function ($attendance) {
+            return [
+                'name' => $attendance->card->name ?? 'N/A',
+                'matric_id' => $attendance->card->matric_id ?? 'N/A',
+                'date' => $attendance->date,
+                'time_in' => $attendance->time_in,
+                'time_out' => $attendance->time_out ?? null
+            ];
+        });
+
+        return view('attendance_history', compact('formattedAttendances', 'course', 'startDate', 'endDate'));
+    }
+
+    /**
+     * NEW: Show attendance records for a specific student
+     */
+    public function showStudentAttendance(Course $course, $enrollmentId)
+    {
+        $lecturer = Auth::guard('lecturer')->user();
+
+        // Check authorization
+        if ($course->lecturer_id !== $lecturer->id) {
+            abort(403, 'You are not authorized to view this student attendance.');
+        }
+
+        $enrollment = Enrollment::where('course_id', $course->id)
+                                ->where('id', $enrollmentId)
+                                ->with('card')
+                                ->firstOrFail();
+
+        $attendances = Attendance::where('card_id', $enrollment->card->id)
+                                ->with('card')
+                                ->orderBy('date', 'desc')
+                                ->orderBy('time_in', 'desc')
+                                ->take(50) // Limit to last 50 records
+                                ->get();
+
+        $formattedAttendances = $attendances->map(function ($attendance) {
+            return [
+                'name' => $attendance->card->name ?? 'N/A',
+                'matric_id' => $attendance->card->matric_id ?? 'N/A',
+                'date' => $attendance->date,
+                'time_in' => $attendance->time_in,
+                'time_out' => $attendance->time_out ?? null
+            ];
+        });
+
+        return view('student_attendance', compact('formattedAttendances', 'course', 'enrollment'));
     }
 }
