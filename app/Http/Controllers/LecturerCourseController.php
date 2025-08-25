@@ -33,9 +33,9 @@ class LecturerCourseController extends Controller
     }
 
     /**
-     * Show details of a specific course and enrolled students
+     * Show details of a specific course and enrolled students with attendance percentages
      */
-    public function show(Course $course)
+  public function show(Course $course)
     {
         $lecturer = Auth::guard('lecturer')->user();
 
@@ -51,9 +51,108 @@ class LecturerCourseController extends Controller
                                     }])
                                     ->get();
 
-        // Return the course-students view (not course-detail)
-        return view('lecturer.course-students', compact('course', 'lecturer', 'enrolledStudents'));
+        // Calculate attendance statistics
+        $studentsWithAttendance = [];
+        $totalWarnings = 0;
+        $totalAttendanceSum = 0;
+
+        // Get the total number of unique dates where attendance was taken for this course
+        $enrolledCardIds = $enrolledStudents->pluck('card.id')->filter();
+        $totalClasses = 0;
+
+        if ($enrolledCardIds->isNotEmpty()) {
+            $totalClasses = Attendance::whereIn('card_id', $enrolledCardIds)
+                ->distinct('date')
+                ->count('date');
+        }
+
+        // If no classes have been held yet, set to 1 to avoid division by zero
+        if ($totalClasses == 0) {
+            $totalClasses = 1;
+        }
+
+        foreach ($enrolledStudents as $index => $enrollment) {
+            $attendanceData = [
+                'enrollment' => $enrollment,
+                'index' => $index + 1,
+                'attendance_count' => 0,
+                'attendance_percentage' => 0,
+                'absences' => $totalClasses,
+                'status' => 'critical',
+                'has_warning' => $totalClasses > 3 // NEW: Warning based on absences > 3
+            ];
+
+            if ($enrollment->card) {
+                // Get attendance count for this student
+                $attendanceCount = Attendance::where('card_id', $enrollment->card->id)
+                    ->distinct('date')
+                    ->count('date');
+
+                // Calculate attendance percentage
+                $attendancePercentage = ($attendanceCount / $totalClasses) * 100;
+                $absences = $totalClasses - $attendanceCount;
+
+                // Determine status (for progress bar colors - keep percentage-based)
+                $status = 'critical';
+                if ($attendancePercentage >= 75) {
+                    $status = 'good';
+                } elseif ($attendancePercentage >= 50) {
+                    $status = 'cautious';
+                }
+
+                // NEW LOGIC: Warning based on absences only (more than 3)
+                $hasWarning = $absences > 3;
+
+                if ($hasWarning) {
+                    $totalWarnings++;
+                }
+
+                $attendanceData = [
+                    'enrollment' => $enrollment,
+                    'index' => $index + 1,
+                    'attendance_count' => $attendanceCount,
+                    'attendance_percentage' => round($attendancePercentage, 1),
+                    'absences' => $absences,
+                    'status' => $status,
+                    'has_warning' => $hasWarning // Now purely based on absences > 3
+                ];
+
+                $totalAttendanceSum += $attendancePercentage;
+            } else {
+                // Student without card - count as warning only if would have > 3 absences
+                if ($totalClasses > 3) {
+                    $totalWarnings++;
+                }
+            }
+
+            $studentsWithAttendance[] = $attendanceData;
+        }
+
+        // Calculate average attendance
+        $averageAttendance = $enrolledStudents->count() > 0 ?
+            round($totalAttendanceSum / $enrolledStudents->count(), 1) : 0;
+
+        // Sort by attendance percentage (lowest first to highlight problems)
+        usort($studentsWithAttendance, function($a, $b) {
+            return $a['attendance_percentage'] <=> $b['attendance_percentage'];
+        });
+
+        $attendanceStats = [
+            'total_students' => $enrolledStudents->count(),
+            'average_attendance' => $averageAttendance,
+            'total_warnings' => $totalWarnings, // Now counts students with > 3 absences
+            'total_classes' => $totalClasses
+        ];
+
+        return view('lecturer.course-students', compact(
+            'course',
+            'lecturer',
+            'studentsWithAttendance',
+            'attendanceStats'
+        ));
     }
+
+    // ... rest of your existing methods remain the same ...
 
     /**
      * Show attendance for a specific course and date (existing method - kept for compatibility)
@@ -184,7 +283,6 @@ class LecturerCourseController extends Controller
             'totalStudents'
         ));
     }
-
     /**
      * NEW: Show attendance overview/statistics for a course (like your Figma design)
      */

@@ -14,13 +14,73 @@
                                 <p class="text-muted mb-0">Section {{ $course->section }} | {{ $course->credit_hours }} Credit Hours</p>
                             </div>
                             <div class="d-flex gap-2">
-                                <!-- CHANGED: Take Attendance instead of View Attendance -->
+                                <!-- Take Attendance Button -->
                                 <button type="button" class="btn btn-outline-success btn-sm" data-toggle="modal" data-target="#attendanceDateModal">
                                     <i class="mdi mdi-calendar-plus"></i> Take Attendance
                                 </button>
                                 <a href="{{ route('lecturer.courses') }}" class="btn btn-outline-primary btn-sm">
                                     <i class="mdi mdi-arrow-left"></i> Back to Courses
                                 </a>
+                            </div>
+                        </div>
+
+                     {{-- Attendance Statistics Summary --}}
+<div class="row mb-4">
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body text-center d-flex flex-column justify-content-center">
+                <i class="mdi mdi-account-multiple" style="font-size: 2rem;"></i>
+                <h3 class="mt-2 mb-1">{{ $attendanceStats['total_students'] }}</h3>
+                <p class="mb-0">Total Students</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body text-center d-flex flex-column justify-content-center">
+                <i class="mdi mdi-chart-line" style="font-size: 2rem;"></i>
+                <h3 class="mt-2 mb-1">{{ $attendanceStats['average_attendance'] }}%</h3>
+                <p class="mb-0">Average Attendance</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card bg-warning text-white h-100">
+            <div class="card-body text-center d-flex flex-column justify-content-center">
+                <i class="mdi mdi-alert-triangle" style="font-size: 2rem;"></i>
+                <h3 class="mt-2 mb-1">{{ $attendanceStats['total_warnings'] }}</h3>
+                <p class="mb-0">Warnings</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body text-center d-flex flex-column justify-content-center">
+                <i class="mdi mdi-calendar-check" style="font-size: 2rem;"></i>
+                <h3 class="mt-2 mb-1">{{ $attendanceStats['total_classes'] }}</h3>
+                <p class="mb-0">Classes Held</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+                        {{-- Legend --}}
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-end">
+                                    <div class="d-flex align-items-center me-3">
+                                        <div class="badge bg-success me-1">■</div>
+                                        <small>Good (≥75%)</small>
+                                    </div>
+                                    <div class="d-flex align-items-center me-3">
+                                        <div class="badge bg-warning me-1">■</div>
+                                        <small>Cautious (50-74%)</small>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <div class="badge bg-danger me-1">■</div>
+                                        <small>Critical (<50%)</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -45,7 +105,6 @@
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                        <!-- CHANGED: Take Attendance button -->
                                         <button type="button" class="btn btn-success" onclick="takeAttendance()">
                                             <i class="mdi mdi-calendar-plus"></i> Take Attendance
                                         </button>
@@ -54,24 +113,33 @@
                             </div>
                         </div>
 
-                        @if($enrolledStudents->count() > 0)
-                            {{-- Students Table --}}
+                        @if(count($studentsWithAttendance) > 0)
+                            {{-- Students Table with Attendance Percentages --}}
                             <div class="table-responsive">
                                 <table class="table table-hover">
                                     <thead class="table-light">
                                         <tr>
-                                            <th>#</th>
+                                            <th>No.</th>
                                             <th>Student Name</th>
                                             <th>Matric ID</th>
                                             <th>Card UID</th>
+                                            <th>Attendance (%)</th>
+                                            <th>Absences</th>
                                             <th>Enrolled Date</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($enrolledStudents as $index => $enrollment)
-                                            <tr>
-                                                <td>{{ $index + 1 }}</td>
+                                        @foreach($studentsWithAttendance as $studentData)
+                                            @php
+                                                $enrollment = $studentData['enrollment'];
+                                                $attendancePercentage = $studentData['attendance_percentage'];
+                                                $status = $studentData['status'];
+                                                $hasWarning = $studentData['has_warning'];
+                                                $absences = $studentData['absences'];
+                                            @endphp
+                                            <tr class="{{ $hasWarning ? 'table-warning' : '' }}">
+                                                <td>{{ $studentData['index'] }}</td>
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <div class="avatar-sm me-3">
@@ -91,6 +159,36 @@
                                                     <code>{{ $enrollment->card->uid ?? 'N/A' }}</code>
                                                 </td>
                                                 <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="progress flex-grow-1 me-2" style="height: 20px; width: 100px;">
+                                                            @if($status == 'good')
+                                                                <div class="progress-bar bg-success" role="progressbar"
+                                                                     style="width: {{ $attendancePercentage }}%"
+                                                                     aria-valuenow="{{ $attendancePercentage }}" aria-valuemin="0" aria-valuemax="100">
+                                                                </div>
+                                                            @elseif($status == 'cautious')
+                                                                <div class="progress-bar bg-warning" role="progressbar"
+                                                                     style="width: {{ $attendancePercentage }}%"
+                                                                     aria-valuenow="{{ $attendancePercentage }}" aria-valuemin="0" aria-valuemax="100">
+                                                                </div>
+                                                            @else
+                                                                <div class="progress-bar bg-danger" role="progressbar"
+                                                                     style="width: {{ $attendancePercentage }}%"
+                                                                     aria-valuenow="{{ $attendancePercentage }}" aria-valuemin="0" aria-valuemax="100">
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                        <span class="badge {{ $status == 'good' ? 'badge-success' : ($status == 'cautious' ? 'badge-warning' : 'badge-danger') }}">
+                                                            {{ $attendancePercentage }}%
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="text-{{ $absences > 3 ? 'danger' : ($absences > 1 ? 'warning' : 'success') }} font-weight-bold">
+                                                        {{ $absences }}
+                                                    </span>
+                                                </td>
+                                                <td>
                                                     <small class="text-muted">
                                                         {{ $enrollment->enrolled_at ? \Carbon\Carbon::parse($enrollment->enrolled_at)->format('M d, Y') : 'N/A' }}
                                                     </small>
@@ -103,40 +201,17 @@
                                                         <button type="button" class="btn btn-outline-primary" title="View Profile">
                                                             <i class="mdi mdi-account-circle"></i>
                                                         </button>
+                                                        @if($hasWarning)
+                                                            <button type="button" class="btn btn-outline-warning btn-sm" title="Warning: Low Attendance">
+                                                                <i class="mdi mdi-alert-triangle"></i>
+                                                            </button>
+                                                        @endif
                                                     </div>
                                                 </td>
                                             </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
-                            </div>
-
-                            {{-- Summary Card --}}
-                            <div class="row mt-4">
-                                <div class="col-md-4">
-                                    <div class="card bg-light">
-                                        <div class="card-body text-center">
-                                            <h3 class="text-primary mb-1">{{ $enrolledStudents->count() }}</h3>
-                                            <p class="text-muted mb-0">Total Students</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card bg-light">
-                                        <div class="card-body text-center">
-                                            <h3 class="text-success mb-1">{{ $course->credit_hours }}</h3>
-                                            <p class="text-muted mb-0">Credit Hours</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card bg-light">
-                                        <div class="card-body text-center">
-                                            <h3 class="text-info mb-1">{{ $course->section }}</h3>
-                                            <p class="text-muted mb-0">Section</p>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         @else
                             {{-- No Students Enrolled --}}
@@ -188,10 +263,51 @@
 .d-flex.gap-2 > * + * {
     margin-left: 0.5rem;
 }
+
+.progress {
+    background-color: #f8f9fa;
+}
+
+.progress-bar {
+    transition: width 0.6s ease;
+}
+
+.table-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+    border: none;
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+.font-weight-bold {
+    font-weight: 700 !important;
+}
+
+.me-1 {
+    margin-right: 0.25rem;
+}
+
+.me-2 {
+    margin-right: 0.5rem;
+}
+
+.me-3 {
+    margin-right: 1rem;
+}
 </style>
 
 <script>
-// CHANGED: Function to take attendance (redirect to attendance page)
+// Function to take attendance (redirect to attendance page)
 function takeAttendance() {
     console.log('takeAttendance function called');
 
@@ -202,7 +318,7 @@ function takeAttendance() {
     console.log('Course ID:', courseId);
 
     if (selectedDate) {
-        // CHANGED: Redirect to the attendance page to take attendance
+        // Redirect to the attendance page to take attendance
         const url = '/lecturer/courses/' + courseId + '/take-attendance?date=' + selectedDate;
         console.log('Navigating to:', url);
         window.location.href = url;
@@ -211,7 +327,7 @@ function takeAttendance() {
     }
 }
 
-// NEW: Function to view individual student attendance history
+// Function to view individual student attendance history
 function viewStudentAttendance(enrollmentId) {
     console.log('Viewing attendance for enrollment ID:', enrollmentId);
     const courseId = {{ $course->id }};
@@ -223,6 +339,12 @@ function viewStudentAttendance(enrollmentId) {
 $(document).ready(function() {
     console.log('Document is ready');
     console.log('jQuery version:', typeof $ !== 'undefined' ? $.fn.jquery : 'jQuery not loaded');
+
+    // Add tooltips to progress bars
+    $('.progress').each(function() {
+        const percentage = $(this).find('.progress-bar').attr('aria-valuenow');
+        $(this).attr('title', `Attendance: ${percentage}%`);
+    });
 });
 </script>
 @endsection

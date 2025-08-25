@@ -112,6 +112,10 @@ Route::middleware(['lecturer.auth'])->prefix('lecturer')->group(function () {
 
     // View individual student attendance
     Route::get('/courses/{course}/student/{enrollment}/attendance', [LecturerCourseController::class, 'showStudentAttendance'])->name('lecturer.course.student_attendance');
+     Route::get('/courses/{course}/overview', [LecturerCourseController::class, 'showOverview'])->name('lecturer.course.overview');
+
+    // AJAX route to refresh attendance data without page reload
+    Route::get('/courses/{course}/attendance-stats', [LecturerCourseController::class, 'getAttendanceStats'])->name('lecturer.course.attendance_stats');
 });
 
 // Public routes (not restricted by role)
