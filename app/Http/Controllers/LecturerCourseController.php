@@ -35,124 +35,142 @@ class LecturerCourseController extends Controller
     /**
      * Show details of a specific course and enrolled students with attendance percentages
      */
-  public function show(Course $course)
-    {
-        $lecturer = Auth::guard('lecturer')->user();
+ public function show(Course $course)
+{
+    $lecturer = Auth::guard('lecturer')->user();
 
-        // Check if this course belongs to the authenticated lecturer
-        if ($course->lecturer_id !== $lecturer->id) {
-            abort(403, 'You are not authorized to view this course.');
-        }
+    // Check if this course belongs to the authenticated lecturer
+    if ($course->lecturer_id !== $lecturer->id) {
+        abort(403, 'You are not authorized to view this course.');
+    }
 
-        // Get enrolled students with their card information
-        $enrolledStudents = Enrollment::where('course_id', $course->id)
-                                    ->with(['card' => function($query) {
-                                        $query->select('id', 'uid', 'name', 'matric_id');
-                                    }])
-                                    ->get();
+    // Get enrolled students with their card information
+    $enrolledStudents = Enrollment::where('course_id', $course->id)
+                                ->with(['card' => function($query) {
+                                    $query->select('id', 'uid', 'name', 'matric_id');
+                                }])
+                                ->get();
 
-        // Calculate attendance statistics
-        $studentsWithAttendance = [];
-        $totalWarnings = 0;
-        $totalAttendanceSum = 0;
+    // FIXED: Get all enrolled card IDs first
+    $enrolledCardIds = $enrolledStudents->pluck('card.id')->filter();
 
-        // Get the total number of unique dates where attendance was taken for this course
-        $enrolledCardIds = $enrolledStudents->pluck('card.id')->filter();
-        $totalClasses = 0;
+    // FIXED: Calculate total classes based on ENROLLED STUDENTS' attendance dates only
+    // This ensures we only count dates where at least one enrolled student attended
+    $totalClasses = 0;
+    if ($enrolledCardIds->isNotEmpty()) {
+        $totalClasses = Attendance::whereIn('card_id', $enrolledCardIds)
+            ->distinct('date')
+            ->count('date');
+    }
 
-        if ($enrolledCardIds->isNotEmpty()) {
-            $totalClasses = Attendance::whereIn('card_id', $enrolledCardIds)
-                ->distinct('date')
-                ->count('date');
-        }
+    // If no classes have been held yet, set to 1 to avoid division by zero
+    if ($totalClasses == 0) {
+        $totalClasses = 1;
+    }
 
-        // If no classes have been held yet, set to 1 to avoid division by zero
-        if ($totalClasses == 0) {
-            $totalClasses = 1;
-        }
+    // FIXED: Get all class dates for this course (based on enrolled students)
+    $allClassDates = [];
+    if ($enrolledCardIds->isNotEmpty()) {
+        $allClassDates = Attendance::whereIn('card_id', $enrolledCardIds)
+            ->distinct('date')
+            ->orderBy('date', 'desc')
+            ->pluck('date')
+            ->toArray();
+    }
 
-        foreach ($enrolledStudents as $index => $enrollment) {
+    // Calculate attendance statistics
+    $studentsWithAttendance = [];
+    $totalWarnings = 0;
+    $totalAttendanceSum = 0;
+
+    foreach ($enrolledStudents as $index => $enrollment) {
+        $attendanceData = [
+            'enrollment' => $enrollment,
+            'index' => $index + 1,
+            'attendance_count' => 0,
+            'attendance_percentage' => 0,
+            'absences' => $totalClasses,
+            'status' => 'critical',
+            'has_warning' => $totalClasses > 3,
+            'total_classes' => $totalClasses, // ADDED: Store total classes for this student
+            'class_dates' => $allClassDates   // ADDED: Store class dates for reference
+        ];
+
+        if ($enrollment->card) {
+            // FIXED: Get attendance count for this student (only for class dates that exist)
+            $attendanceCount = 0;
+            if (!empty($allClassDates)) {
+                $attendanceCount = Attendance::where('card_id', $enrollment->card->id)
+                    ->whereIn('date', $allClassDates)
+                    ->distinct('date')
+                    ->count('date');
+            }
+
+            // Calculate attendance percentage
+            $attendancePercentage = ($attendanceCount / $totalClasses) * 100;
+            $absences = $totalClasses - $attendanceCount;
+
+            // Determine status (for progress bar colors)
+            $status = 'critical';
+            if ($attendancePercentage >= 75) {
+                $status = 'good';
+            } elseif ($attendancePercentage >= 50) {
+                $status = 'cautious';
+            }
+
+            // Warning based on absences (more than 3)
+            $hasWarning = $absences > 3;
+
+            if ($hasWarning) {
+                $totalWarnings++;
+            }
+
             $attendanceData = [
                 'enrollment' => $enrollment,
                 'index' => $index + 1,
-                'attendance_count' => 0,
-                'attendance_percentage' => 0,
-                'absences' => $totalClasses,
-                'status' => 'critical',
-                'has_warning' => $totalClasses > 3 // NEW: Warning based on absences > 3
+                'attendance_count' => $attendanceCount,
+                'attendance_percentage' => round($attendancePercentage, 1),
+                'absences' => $absences,
+                'status' => $status,
+                'has_warning' => $hasWarning,
+                'total_classes' => $totalClasses,
+                'class_dates' => $allClassDates
             ];
 
-            if ($enrollment->card) {
-                // Get attendance count for this student
-                $attendanceCount = Attendance::where('card_id', $enrollment->card->id)
-                    ->distinct('date')
-                    ->count('date');
-
-                // Calculate attendance percentage
-                $attendancePercentage = ($attendanceCount / $totalClasses) * 100;
-                $absences = $totalClasses - $attendanceCount;
-
-                // Determine status (for progress bar colors - keep percentage-based)
-                $status = 'critical';
-                if ($attendancePercentage >= 75) {
-                    $status = 'good';
-                } elseif ($attendancePercentage >= 50) {
-                    $status = 'cautious';
-                }
-
-                // NEW LOGIC: Warning based on absences only (more than 3)
-                $hasWarning = $absences > 3;
-
-                if ($hasWarning) {
-                    $totalWarnings++;
-                }
-
-                $attendanceData = [
-                    'enrollment' => $enrollment,
-                    'index' => $index + 1,
-                    'attendance_count' => $attendanceCount,
-                    'attendance_percentage' => round($attendancePercentage, 1),
-                    'absences' => $absences,
-                    'status' => $status,
-                    'has_warning' => $hasWarning // Now purely based on absences > 3
-                ];
-
-                $totalAttendanceSum += $attendancePercentage;
-            } else {
-                // Student without card - count as warning only if would have > 3 absences
-                if ($totalClasses > 3) {
-                    $totalWarnings++;
-                }
+            $totalAttendanceSum += $attendancePercentage;
+        } else {
+            // Student without card - count as warning only if would have > 3 absences
+            if ($totalClasses > 3) {
+                $totalWarnings++;
             }
-
-            $studentsWithAttendance[] = $attendanceData;
         }
 
-        // Calculate average attendance
-        $averageAttendance = $enrolledStudents->count() > 0 ?
-            round($totalAttendanceSum / $enrolledStudents->count(), 1) : 0;
-
-        // Sort by attendance percentage (lowest first to highlight problems)
-        usort($studentsWithAttendance, function($a, $b) {
-            return $a['attendance_percentage'] <=> $b['attendance_percentage'];
-        });
-
-        $attendanceStats = [
-            'total_students' => $enrolledStudents->count(),
-            'average_attendance' => $averageAttendance,
-            'total_warnings' => $totalWarnings, // Now counts students with > 3 absences
-            'total_classes' => $totalClasses
-        ];
-
-        return view('lecturer.course-students', compact(
-            'course',
-            'lecturer',
-            'studentsWithAttendance',
-            'attendanceStats'
-        ));
+        $studentsWithAttendance[] = $attendanceData;
     }
 
-    // ... rest of your existing methods remain the same ...
+    // Calculate average attendance
+    $averageAttendance = $enrolledStudents->count() > 0 ?
+        round($totalAttendanceSum / $enrolledStudents->count(), 1) : 0;
+
+    // Sort by attendance percentage (lowest first to highlight problems)
+    usort($studentsWithAttendance, function($a, $b) {
+        return $a['attendance_percentage'] <=> $b['attendance_percentage'];
+    });
+
+    $attendanceStats = [
+        'total_students' => $enrolledStudents->count(),
+        'average_attendance' => $averageAttendance,
+        'total_warnings' => $totalWarnings,
+        'total_classes' => $totalClasses
+    ];
+
+    return view('lecturer.course-students', compact(
+        'course',
+        'lecturer',
+        'studentsWithAttendance',
+        'attendanceStats'
+    ));
+}
 
     /**
      * Show attendance for a specific course and date (existing method - kept for compatibility)
@@ -469,4 +487,81 @@ class LecturerCourseController extends Controller
 
         return view('student_attendance', compact('formattedAttendances', 'course', 'enrollment'));
     }
+public function getRecentAttendanceRecords(Course $course, $enrollmentId)
+{
+    $lecturer = Auth::guard('lecturer')->user();
+
+    // Check authorization
+    if ($course->lecturer_id !== $lecturer->id) {
+        return response()->json(['error' => 'Unauthorized'], 403);
+    }
+
+    // Get the enrollment record
+    $enrollment = Enrollment::where('course_id', $course->id)
+                           ->where('id', $enrollmentId)
+                           ->with('card')
+                           ->first();
+
+    if (!$enrollment || !$enrollment->card) {
+        return response()->json(['error' => 'Student not found'], 404);
+    }
+
+    // FIXED: Get ALL enrolled students' card IDs for THIS COURSE
+    $enrolledCardIds = Enrollment::where('course_id', $course->id)
+                                ->with('card')
+                                ->get()
+                                ->pluck('card.id')
+                                ->filter();
+
+    if ($enrolledCardIds->isEmpty()) {
+        return response()->json([]);
+    }
+
+    // FIXED: Get class dates where attendance was taken for THIS COURSE
+    // Only count dates where at least one enrolled student attended
+    $allClassDates = Attendance::whereIn('card_id', $enrolledCardIds)
+                              ->distinct('date')
+                              ->orderBy('date', 'desc')
+                              ->pluck('date')
+                              ->take(10); // Get last 10 class dates
+
+    if ($allClassDates->isEmpty()) {
+        return response()->json([]);
+    }
+
+    // FIXED: Get THIS student's attendance records for the class dates
+    $studentAttendances = Attendance::where('card_id', $enrollment->card->id)
+                                   ->whereIn('date', $allClassDates)
+                                   ->get()
+                                   ->keyBy('date');
+
+    // Format the attendance data
+    $formattedRecords = [];
+
+    foreach ($allClassDates as $classDate) {
+        $attendanceRecord = $studentAttendances->get($classDate);
+
+        if ($attendanceRecord) {
+            // Student was present
+            $formattedRecords[] = [
+                'date' => Carbon::parse($classDate)->format('M d, Y'),
+                'time_in' => $attendanceRecord->time_in ?
+                           Carbon::parse($classDate . ' ' . $attendanceRecord->time_in)->format('H:i A') : null,
+                'time_out' => $attendanceRecord->time_out ?
+                            Carbon::parse($classDate . ' ' . $attendanceRecord->time_out)->format('H:i A') : null,
+                'status' => 'Present'
+            ];
+        } else {
+            // Student was absent
+            $formattedRecords[] = [
+                'date' => Carbon::parse($classDate)->format('M d, Y'),
+                'time_in' => null,
+                'time_out' => null,
+                'status' => 'Absent'
+            ];
+        }
+    }
+
+    return response()->json($formattedRecords);
+}
 }
