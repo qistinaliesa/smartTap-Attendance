@@ -112,8 +112,13 @@ Route::middleware(['lecturer.auth'])->prefix('lecturer')->group(function () {
 
     // View individual student attendance
     Route::get('/courses/{course}/student/{enrollment}/attendance', [LecturerCourseController::class, 'showStudentAttendance'])->name('lecturer.course.student_attendance');
-     Route::get('/courses/{course}/overview', [LecturerCourseController::class, 'showOverview'])->name('lecturer.course.overview');
-Route::get('/courses/{course}/student/{enrollment}/recent-attendance', [LecturerCourseController::class, 'getRecentAttendanceRecords'])->name('lecturer.student.recent_attendance');
+    Route::get('/courses/{course}/overview', [LecturerCourseController::class, 'showOverview'])->name('lecturer.course.overview');
+    Route::get('/courses/{course}/student/{enrollment}/recent-attendance', [LecturerCourseController::class, 'getRecentAttendanceRecords'])->name('lecturer.student.recent_attendance');
+
+    // NEW ROUTES: MC/Reason upload functionality
+    Route::post('/courses/{course}/student/{enrollment}/mark-present', [LecturerCourseController::class, 'markPresentWithReason'])->name('lecturer.student.mark_present');
+    Route::get('/courses/{course}/student/{enrollment}/absent-dates', [LecturerCourseController::class, 'getAbsentDates'])->name('lecturer.student.absent_dates');
+
     // AJAX route to refresh attendance data without page reload
     Route::get('/courses/{course}/attendance-stats', [LecturerCourseController::class, 'getAttendanceStats'])->name('lecturer.course.attendance_stats');
 });

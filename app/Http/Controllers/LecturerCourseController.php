@@ -487,81 +487,216 @@ class LecturerCourseController extends Controller
 
         return view('student_attendance', compact('formattedAttendances', 'course', 'enrollment'));
     }
-public function getRecentAttendanceRecords(Course $course, $enrollmentId)
-{
-    $lecturer = Auth::guard('lecturer')->user();
 
-    // Check authorization
-    if ($course->lecturer_id !== $lecturer->id) {
-        return response()->json(['error' => 'Unauthorized'], 403);
+    public function getRecentAttendanceRecords(Course $course, $enrollmentId)
+    {
+        $lecturer = Auth::guard('lecturer')->user();
+
+        // Check authorization
+        if ($course->lecturer_id !== $lecturer->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Get the enrollment record
+        $enrollment = Enrollment::where('course_id', $course->id)
+                               ->where('id', $enrollmentId)
+                               ->with('card')
+                               ->first();
+
+        if (!$enrollment || !$enrollment->card) {
+            return response()->json(['error' => 'Student not found'], 404);
+        }
+
+        // FIXED: Get ALL enrolled students' card IDs for THIS COURSE
+        $enrolledCardIds = Enrollment::where('course_id', $course->id)
+                                    ->with('card')
+                                    ->get()
+                                    ->pluck('card.id')
+                                    ->filter();
+
+        if ($enrolledCardIds->isEmpty()) {
+            return response()->json([]);
+        }
+
+        // FIXED: Get class dates where attendance was taken for THIS COURSE
+        // Only count dates where at least one enrolled student attended
+        $allClassDates = Attendance::whereIn('card_id', $enrolledCardIds)
+                                  ->distinct('date')
+                                  ->orderBy('date', 'desc')
+                                  ->pluck('date')
+                                  ->take(10); // Get last 10 class dates
+
+        if ($allClassDates->isEmpty()) {
+            return response()->json([]);
+        }
+
+        // FIXED: Get THIS student's attendance records for the class dates
+        $studentAttendances = Attendance::where('card_id', $enrollment->card->id)
+                                       ->whereIn('date', $allClassDates)
+                                       ->get()
+                                       ->keyBy('date');
+
+        // Format the attendance data
+        $formattedRecords = [];
+
+        foreach ($allClassDates as $classDate) {
+            $attendanceRecord = $studentAttendances->get($classDate);
+
+            if ($attendanceRecord) {
+                // Student was present
+                $formattedRecords[] = [
+                    'date' => Carbon::parse($classDate)->format('M d, Y'),
+                    'time_in' => $attendanceRecord->time_in ?
+                               Carbon::parse($classDate . ' ' . $attendanceRecord->time_in)->format('H:i A') : null,
+                    'time_out' => $attendanceRecord->time_out ?
+                                Carbon::parse($classDate . ' ' . $attendanceRecord->time_out)->format('H:i A') : null,
+                    'status' => 'Present'
+                ];
+            } else {
+                // Student was absent
+                $formattedRecords[] = [
+                    'date' => Carbon::parse($classDate)->format('M d, Y'),
+                    'time_in' => null,
+                    'time_out' => null,
+                    'status' => 'Absent'
+                ];
+            }
+        }
+
+        return response()->json($formattedRecords);
     }
 
-    // Get the enrollment record
-    $enrollment = Enrollment::where('course_id', $course->id)
-                           ->where('id', $enrollmentId)
-                           ->with('card')
-                           ->first();
+    /**
+     * NEW: Mark student as present with MC/Reason (no database storage)
+     */
+    public function markPresentWithReason(Request $request, Course $course, $enrollmentId)
+    {
+        $lecturer = Auth::guard('lecturer')->user();
 
-    if (!$enrollment || !$enrollment->card) {
-        return response()->json(['error' => 'Student not found'], 404);
-    }
+        // Check authorization
+        if ($course->lecturer_id !== $lecturer->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
 
-    // FIXED: Get ALL enrolled students' card IDs for THIS COURSE
-    $enrolledCardIds = Enrollment::where('course_id', $course->id)
-                                ->with('card')
-                                ->get()
-                                ->pluck('card.id')
-                                ->filter();
+        // Validate input
+        $request->validate([
+            'date' => 'required|date',
+            'reason' => 'required|string|max:255',
+            'mc_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048'
+        ]);
 
-    if ($enrolledCardIds->isEmpty()) {
-        return response()->json([]);
-    }
+        // Get the enrollment record
+        $enrollment = Enrollment::where('course_id', $course->id)
+                               ->where('id', $enrollmentId)
+                               ->with('card')
+                               ->first();
 
-    // FIXED: Get class dates where attendance was taken for THIS COURSE
-    // Only count dates where at least one enrolled student attended
-    $allClassDates = Attendance::whereIn('card_id', $enrolledCardIds)
-                              ->distinct('date')
-                              ->orderBy('date', 'desc')
-                              ->pluck('date')
-                              ->take(10); // Get last 10 class dates
+        if (!$enrollment || !$enrollment->card) {
+            return response()->json(['error' => 'Student not found'], 404);
+        }
 
-    if ($allClassDates->isEmpty()) {
-        return response()->json([]);
-    }
+        $date = $request->input('date');
+        $reason = $request->input('reason');
 
-    // FIXED: Get THIS student's attendance records for the class dates
-    $studentAttendances = Attendance::where('card_id', $enrollment->card->id)
-                                   ->whereIn('date', $allClassDates)
-                                   ->get()
-                                   ->keyBy('date');
+        // Check if student already has attendance for this date
+        $existingAttendance = Attendance::where('card_id', $enrollment->card->id)
+                                       ->where('date', $date)
+                                       ->first();
 
-    // Format the attendance data
-    $formattedRecords = [];
+        if ($existingAttendance) {
+            return response()->json(['error' => 'Student already marked as present for this date'], 400);
+        }
 
-    foreach ($allClassDates as $classDate) {
-        $attendanceRecord = $studentAttendances->get($classDate);
+        // Handle file upload temporarily (not stored permanently as requested)
+        $fileName = null;
+        if ($request->hasFile('mc_file')) {
+            $file = $request->file('mc_file');
+            $fileName = $file->getClientOriginalName();
+            // File is uploaded but we're not storing it permanently as per requirement
+        }
 
-        if ($attendanceRecord) {
-            // Student was present
-            $formattedRecords[] = [
-                'date' => Carbon::parse($classDate)->format('M d, Y'),
-                'time_in' => $attendanceRecord->time_in ?
-                           Carbon::parse($classDate . ' ' . $attendanceRecord->time_in)->format('H:i A') : null,
-                'time_out' => $attendanceRecord->time_out ?
-                            Carbon::parse($classDate . ' ' . $attendanceRecord->time_out)->format('H:i A') : null,
-                'status' => 'Present'
-            ];
-        } else {
-            // Student was absent
-            $formattedRecords[] = [
-                'date' => Carbon::parse($classDate)->format('M d, Y'),
-                'time_in' => null,
+        try {
+            // Create attendance record automatically marking student as present
+            Attendance::create([
+                'card_id' => $enrollment->card->id,
+                'date' => $date,
+                'time_in' => '08:00:00', // Default time or you can make this configurable
                 'time_out' => null,
-                'status' => 'Absent'
-            ];
+                // Note: We're not storing reason/MC file as per requirement
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Student marked as present with reason: ' . $reason .
+                           ($fileName ? ' (File: ' . $fileName . ')' : ''),
+                'student_name' => $enrollment->card->name,
+                'date' => Carbon::parse($date)->format('M d, Y'),
+                'reason' => $reason,
+                'file_name' => $fileName
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to mark student as present: ' . $e->getMessage()
+            ], 500);
         }
     }
 
-    return response()->json($formattedRecords);
-}
+    /**
+     * NEW: Get class dates where student was absent
+     */
+    public function getAbsentDates(Course $course, $enrollmentId)
+    {
+        $lecturer = Auth::guard('lecturer')->user();
+
+        // Check authorization
+        if ($course->lecturer_id !== $lecturer->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Get the enrollment record
+        $enrollment = Enrollment::where('course_id', $course->id)
+                               ->where('id', $enrollmentId)
+                               ->with('card')
+                               ->first();
+
+        if (!$enrollment || !$enrollment->card) {
+            return response()->json(['error' => 'Student not found'], 404);
+        }
+
+        // Get all enrolled students' card IDs for this course
+        $enrolledCardIds = Enrollment::where('course_id', $course->id)
+                                    ->with('card')
+                                    ->get()
+                                    ->pluck('card.id')
+                                    ->filter();
+
+        // Get all class dates for this course
+        $allClassDates = Attendance::whereIn('card_id', $enrolledCardIds)
+                                  ->distinct('date')
+                                  ->orderBy('date', 'desc')
+                                  ->pluck('date');
+
+        if ($allClassDates->isEmpty()) {
+            return response()->json([]);
+        }
+
+        // Get dates where this student attended
+        $attendedDates = Attendance::where('card_id', $enrollment->card->id)
+                                  ->whereIn('date', $allClassDates)
+                                  ->pluck('date')
+                                  ->toArray();
+
+        // Find absent dates
+        $absentDates = $allClassDates->filter(function($date) use ($attendedDates) {
+            return !in_array($date, $attendedDates);
+        })->map(function($date) {
+            return [
+                'value' => $date,
+                'label' => Carbon::parse($date)->format('M d, Y (l)')
+            ];
+        })->values();
+
+        return response()->json($absentDates);
+    }
 }

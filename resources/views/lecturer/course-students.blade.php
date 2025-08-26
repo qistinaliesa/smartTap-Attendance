@@ -24,45 +24,45 @@
                             </div>
                         </div>
 
-                     {{-- Attendance Statistics Summary --}}
-<div class="row mb-4">
-    <div class="col-md-3 col-6 mb-3">
-        <div class="card bg-primary text-white h-100">
-            <div class="card-body text-center d-flex flex-column justify-content-center">
-                <i class="mdi mdi-account-multiple" style="font-size: 2rem;"></i>
-                <h3 class="mt-2 mb-1">{{ $attendanceStats['total_students'] }}</h3>
-                <p class="mb-0">Total Students</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 col-6 mb-3">
-        <div class="card bg-success text-white h-100">
-            <div class="card-body text-center d-flex flex-column justify-content-center">
-                <i class="mdi mdi-chart-line" style="font-size: 2rem;"></i>
-                <h3 class="mt-2 mb-1">{{ $attendanceStats['average_attendance'] }}%</h3>
-                <p class="mb-0">Average Attendance</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 col-6 mb-3">
-        <div class="card bg-warning text-white h-100">
-            <div class="card-body text-center d-flex flex-column justify-content-center">
-                <i class="mdi mdi-alert-triangle" style="font-size: 2rem;"></i>
-                <h3 class="mt-2 mb-1">{{ $attendanceStats['total_warnings'] }}</h3>
-                <p class="mb-0">Warnings</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 col-6 mb-3">
-        <div class="card bg-info text-white h-100">
-            <div class="card-body text-center d-flex flex-column justify-content-center">
-                <i class="mdi mdi-calendar-check" style="font-size: 2rem;"></i>
-                <h3 class="mt-2 mb-1">{{ $attendanceStats['total_classes'] }}</h3>
-                <p class="mb-0">Classes Held</p>
-            </div>
-        </div>
-    </div>
-</div>
+                        {{-- Attendance Statistics Summary --}}
+                        <div class="row mb-4">
+                            <div class="col-md-3 col-6 mb-3">
+                                <div class="card bg-primary text-white h-100">
+                                    <div class="card-body text-center d-flex flex-column justify-content-center">
+                                        <i class="mdi mdi-account-multiple" style="font-size: 2rem;"></i>
+                                        <h3 class="mt-2 mb-1">{{ $attendanceStats['total_students'] }}</h3>
+                                        <p class="mb-0">Total Students</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <div class="card bg-success text-white h-100">
+                                    <div class="card-body text-center d-flex flex-column justify-content-center">
+                                        <i class="mdi mdi-chart-line" style="font-size: 2rem;"></i>
+                                        <h3 class="mt-2 mb-1">{{ $attendanceStats['average_attendance'] }}%</h3>
+                                        <p class="mb-0">Average Attendance</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <div class="card bg-warning text-white h-100">
+                                    <div class="card-body text-center d-flex flex-column justify-content-center">
+                                        <i class="mdi mdi-alert-triangle" style="font-size: 2rem;"></i>
+                                        <h3 class="mt-2 mb-1">{{ $attendanceStats['total_warnings'] }}</h3>
+                                        <p class="mb-0">Warnings</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <div class="card bg-info text-white h-100">
+                                    <div class="card-body text-center d-flex flex-column justify-content-center">
+                                        <i class="mdi mdi-calendar-check" style="font-size: 2rem;"></i>
+                                        <h3 class="mt-2 mb-1">{{ $attendanceStats['total_classes'] }}</h3>
+                                        <p class="mb-0">Classes Held</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                         {{-- Legend --}}
                         <div class="row mb-3">
@@ -109,6 +109,66 @@
                                             <i class="mdi mdi-calendar-plus"></i> Take Attendance
                                         </button>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- MC/Reason Upload Modal --}}
+                        <div class="modal fade" id="mcUploadModal" tabindex="-1" role="dialog" aria-labelledby="mcUploadModalLabel" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-warning text-white">
+                                        <h5 class="modal-title" id="mcUploadModalLabel">
+                                            <i class="mdi mdi-file-upload"></i> Upload MC/Reason for Absence
+                                        </h5>
+                                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <form id="mcUploadForm" enctype="multipart/form-data">
+                                        @csrf
+                                        <div class="modal-body">
+                                            <div class="text-center mb-3">
+                                                <div class="avatar-lg mx-auto mb-2" id="mcStudentAvatar">
+                                                    <div class="avatar-title bg-warning text-white rounded-circle" style="width: 60px; height: 60px; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;">
+                                                        S
+                                                    </div>
+                                                </div>
+                                                <h6 class="mb-1" id="mcStudentName">Student Name</h6>
+                                                <small class="text-muted" id="mcStudentMatricId">Matric ID</small>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="mcAbsentDate">Select Absent Date:</label>
+                                                <select class="form-control" id="mcAbsentDate" name="date" required>
+                                                    <option value="">Choose a date...</option>
+                                                </select>
+                                                <small class="text-muted">Only dates where the student was absent will be shown</small>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="mcReason">Reason for Absence:</label>
+                                                <textarea class="form-control" id="mcReason" name="reason" rows="3" placeholder="Enter reason for absence (e.g., Medical Certificate, Family emergency, etc.)" required></textarea>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="mcFile">Upload Supporting Document (Optional):</label>
+                                                <input type="file" class="form-control-file" id="mcFile" name="mc_file" accept=".jpg,.jpeg,.png,.pdf">
+                                                <small class="text-muted">Accepted formats: JPG, PNG, PDF (Max: 2MB)</small>
+                                            </div>
+
+                                            <div class="alert alert-info">
+                                                <i class="mdi mdi-information"></i>
+                                                <strong>Note:</strong> Uploading MC/reason will automatically mark the student as present for the selected date.
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-warning">
+                                                <i class="mdi mdi-upload"></i> Upload & Mark Present
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -320,13 +380,22 @@
             'card_uid' => $enrollment->card->uid ?? 'N/A',
             'enrolled_at' => $enrollment->enrolled_at ? \Carbon\Carbon::parse($enrollment->enrolled_at)->format('M d, Y') : 'N/A',
             'attendance_percentage' => $attendancePercentage,
-            'attendance_count' => $studentData['attendance_count'], // FIXED: Use actual count
+            'attendance_count' => $studentData['attendance_count'],
             'absences' => $absences,
             'status' => $status,
-            'total_classes' => $studentData['total_classes'] ?? $attendanceStats['total_classes'] // FIXED: Add total classes
+            'total_classes' => $studentData['total_classes'] ?? $attendanceStats['total_classes']
         ]) }})">
     <i class="mdi mdi-account-circle"></i>
 </button>
+                                                        @if($absences > 0)
+                                                            <button type="button" class="btn btn-outline-warning" title="Upload MC/Reason" onclick="showMcUploadModal({{ json_encode([
+                'enrollment_id' => $enrollment->id,
+                'name' => $enrollment->card->name ?? 'N/A',
+                'matric_id' => $enrollment->card->matric_id ?? 'N/A'
+            ]) }})">
+                                                                <i class="mdi mdi-file-upload"></i>
+                                                            </button>
+                                                        @endif
                                                         @if($hasWarning)
                                                             <button type="button" class="btn btn-outline-warning btn-sm" title="Warning: Low Attendance">
                                                                 <i class="mdi mdi-alert-triangle"></i>
@@ -445,6 +514,10 @@
     border-bottom: none;
 }
 
+.modal-header.bg-warning {
+    border-bottom: none;
+}
+
 .attendance-record {
     border-left: 3px solid #dee2e6;
     padding-left: 15px;
@@ -474,9 +547,29 @@
     padding: 0.25rem 0.5rem;
     border-radius: 0.375rem;
 }
+
+/* Loading spinner */
+.loading-spinner {
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 2s linear infinite;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 </style>
 
 <script>
+// Global variable to store current student data for MC upload
+let currentMcStudent = null;
+
 // Function to take attendance (redirect to attendance page)
 function takeAttendance() {
     console.log('takeAttendance function called');
@@ -506,8 +599,6 @@ function viewStudentAttendance(enrollmentId) {
 }
 
 // Function to show student profile modal
-// Replace your showStudentProfile JavaScript function with this fixed version
-
 function showStudentProfile(studentData) {
     console.log('Showing profile for student:', studentData);
 
@@ -517,8 +608,7 @@ function showStudentProfile(studentData) {
     document.getElementById('studentCardUid').textContent = studentData.card_uid;
     document.getElementById('enrolledDate').textContent = studentData.enrolled_at;
 
-    // FIXED: Use the SAME calculation logic as the main view
-    // The attendance statistics should match exactly what's shown in the table
+    // Update attendance statistics
     const attendancePercentage = studentData.attendance_percentage;
     const attendanceCount = studentData.attendance_count;
     const totalAbsences = studentData.absences;
@@ -633,15 +723,199 @@ function displaySampleAttendanceRecords() {
     displayRecentAttendanceRecords(sampleData);
 }
 
+// NEW: Function to show MC upload modal
+function showMcUploadModal(studentData) {
+    console.log('Showing MC upload modal for student:', studentData);
+    currentMcStudent = studentData;
+
+    // Update modal content with student data
+    document.getElementById('mcStudentName').textContent = studentData.name;
+    document.getElementById('mcStudentMatricId').textContent = studentData.matric_id;
+
+    // Update avatar
+    const avatarElement = document.querySelector('#mcStudentAvatar .avatar-title');
+    avatarElement.textContent = studentData.name.charAt(0).toUpperCase();
+
+    // Reset form
+    document.getElementById('mcUploadForm').reset();
+    document.getElementById('mcAbsentDate').innerHTML = '<option value="">Loading dates...</option>';
+
+    // Load absent dates for this student
+    loadAbsentDates(studentData.enrollment_id);
+
+    // Show the modal
+    $('#mcUploadModal').modal('show');
+}
+
+// NEW: Function to load absent dates for a student
+function loadAbsentDates(enrollmentId) {
+    const courseId = {{ $course->id }};
+
+    fetch(`/lecturer/courses/${courseId}/student/${enrollmentId}/absent-dates`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const selectElement = document.getElementById('mcAbsentDate');
+            selectElement.innerHTML = '<option value="">Choose a date...</option>';
+
+            if (data.length === 0) {
+                selectElement.innerHTML = '<option value="">No absent dates found</option>';
+                return;
+            }
+
+            data.forEach(dateInfo => {
+                const option = document.createElement('option');
+                option.value = dateInfo.value;
+                option.textContent = dateInfo.label;
+                selectElement.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading absent dates:', error);
+            document.getElementById('mcAbsentDate').innerHTML = '<option value="">Error loading dates</option>';
+        });
+}
+
+// NEW: Handle MC upload form submission
+document.addEventListener('DOMContentLoaded', function() {
+    const mcForm = document.getElementById('mcUploadForm');
+    if (mcForm) {
+        mcForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleMcUpload();
+        });
+    }
+});
+
+// NEW: Function to handle MC upload
+// Simplified version for debugging
+function handleMcUpload() {
+    console.log('handleMcUpload called');
+
+    if (!currentMcStudent) {
+        alert('No student selected. Please try again.');
+        return;
+    }
+
+    // Get form values
+    const selectedDate = document.getElementById('mcAbsentDate').value;
+    const reason = document.getElementById('mcReason').value;
+
+    console.log('Selected date:', selectedDate);
+    console.log('Reason:', reason);
+
+    if (!selectedDate || !reason.trim()) {
+        alert('Please fill in all required fields.');
+        return;
+    }
+
+    const courseId = {{ $course->id }};
+    const enrollmentId = currentMcStudent.enrollment_id;
+    const url = `/lecturer/courses/${courseId}/student/${enrollmentId}/mark-present`;
+
+    console.log('URL:', url);
+    console.log('Course ID:', courseId);
+    console.log('Enrollment ID:', enrollmentId);
+
+    // Show loading state
+    const submitBtn = document.querySelector('#mcUploadForm button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.innerHTML = 'Uploading...';
+    submitBtn.disabled = true;
+
+    // Simple fetch without FormData first
+    const data = {
+        date: selectedDate,
+        reason: reason.trim(),
+        _token: '{{ csrf_token() }}'
+    };
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        console.log('Response received:', response);
+        console.log('Status:', response.status);
+        console.log('Status text:', response.statusText);
+
+        return response.text(); // Get as text first to see what we're getting
+    })
+    .then(text => {
+        console.log('Response text:', text);
+
+        try {
+            const data = JSON.parse(text);
+            console.log('Parsed JSON:', data);
+
+            if (data.success) {
+                alert('Success: ' + data.message);
+                $('#mcUploadModal').modal('hide');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+            }
+        } catch (e) {
+            console.error('JSON parse error:', e);
+            alert('Server returned invalid response: ' + text.substring(0, 200));
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('Network error: ' + error.message);
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalBtnText;
+        submitBtn.disabled = false;
+    });
+}
+
 // Document ready function
 $(document).ready(function() {
     console.log('Document is ready');
     console.log('jQuery version:', typeof $ !== 'undefined' ? $.fn.jquery : 'jQuery not loaded');
 
+    // Add CSRF token to meta tag if not already present
+    if (!document.querySelector('meta[name="csrf-token"]')) {
+        const metaTag = document.createElement('meta');
+        metaTag.setAttribute('name', 'csrf-token');
+        metaTag.setAttribute('content', '{{ csrf_token() }}');
+        document.getElementsByTagName('head')[0].appendChild(metaTag);
+    }
+
     // Add tooltips to progress bars
     $('.progress').each(function() {
         const percentage = $(this).find('.progress-bar').attr('aria-valuenow');
         $(this).attr('title', `Attendance: ${percentage}%`);
+    });
+
+    // Handle file input change
+    $('#mcFile').on('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const maxSize = 2 * 1024 * 1024; // 2MB
+            if (file.size > maxSize) {
+                alert('File size too large. Please select a file smaller than 2MB.');
+                this.value = '';
+                return;
+            }
+
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Invalid file type. Please select a JPG, PNG, or PDF file.');
+                this.value = '';
+                return;
+            }
+        }
     });
 });
 </script>
