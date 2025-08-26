@@ -39,5 +39,9 @@ class LoginController extends Controller
         $table->string('utype')->default('user');
     });
 }
+public function medicalCertificates()
+    {
+        return $this->hasMany(MedicalCertificate::class, 'uploaded_by');
+    }
 
 }

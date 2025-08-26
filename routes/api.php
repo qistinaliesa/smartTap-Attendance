@@ -9,7 +9,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return response()->json(['message' => 'API connection successful']);
 });
-
+Route::get('/ping', function () {
+    return response()->json(['status' => 'API is working!']);
+});
 // Card registration
 Route::post('/register', [CardController::class, 'register']);
 

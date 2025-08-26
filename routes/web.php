@@ -10,7 +10,6 @@ use App\Http\Controllers\LecturerController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\LecturerCourseController;
 
-
 // Add this temporarily to your routes file for debugging
 Route::get('/debug-user', function () {
     if (!Auth::check()) {
@@ -95,12 +94,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });
 
-// Lecturer-only routes (using lecturer guard)
+// FIXED: Lecturer-only routes (using lecturer guard) with /lecturer prefix
 Route::middleware(['lecturer.auth'])->prefix('lecturer')->group(function () {
     Route::get('/dashboard', function () {
         return view('users.home');
     })->name('lusers.home');
 
+    // Basic course routes
     Route::get('/courses', [LecturerCourseController::class, 'index'])->name('lecturer.courses');
     Route::get('/courses/{course}', [LecturerCourseController::class, 'show'])->name('lecturer.course.show');
 
@@ -113,11 +113,16 @@ Route::middleware(['lecturer.auth'])->prefix('lecturer')->group(function () {
     // View individual student attendance
     Route::get('/courses/{course}/student/{enrollment}/attendance', [LecturerCourseController::class, 'showStudentAttendance'])->name('lecturer.course.student_attendance');
     Route::get('/courses/{course}/overview', [LecturerCourseController::class, 'showOverview'])->name('lecturer.course.overview');
-    Route::get('/courses/{course}/student/{enrollment}/recent-attendance', [LecturerCourseController::class, 'getRecentAttendanceRecords'])->name('lecturer.student.recent_attendance');
 
-    // NEW ROUTES: MC/Reason upload functionality
-    Route::post('/courses/{course}/student/{enrollment}/mark-present', [LecturerCourseController::class, 'markPresentWithReason'])->name('lecturer.student.mark_present');
+    // FIXED: Student-specific routes (all using {enrollment} parameter for consistency)
+    Route::get('/courses/{course}/student/{enrollment}/recent-attendance', [LecturerCourseController::class, 'getRecentAttendanceRecords'])->name('lecturer.student.recent_attendance');
+    Route::get('/courses/{course}/student/{enrollment}/medical-certificates', [LecturerCourseController::class, 'getStudentMedicalCertificates'])->name('lecturer.student.medical_certificates');
     Route::get('/courses/{course}/student/{enrollment}/absent-dates', [LecturerCourseController::class, 'getAbsentDates'])->name('lecturer.student.absent_dates');
+    Route::post('/courses/{course}/student/{enrollment}/mark-present', [LecturerCourseController::class, 'markPresentWithReason'])->name('lecturer.student.mark_present');
+
+    // Medical certificate file routes
+    Route::get('/courses/{course}/mc/{mc}/download', [LecturerCourseController::class, 'downloadMedicalCertificate'])->name('lecturer.mc.download');
+    Route::delete('/courses/{course}/mc/{mc}', [LecturerCourseController::class, 'deleteMedicalCertificate'])->name('lecturer.mc.delete');
 
     // AJAX route to refresh attendance data without page reload
     Route::get('/courses/{course}/attendance-stats', [LecturerCourseController::class, 'getAttendanceStats'])->name('lecturer.course.attendance_stats');

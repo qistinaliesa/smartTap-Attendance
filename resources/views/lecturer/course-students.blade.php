@@ -138,7 +138,7 @@
                                                 <small class="text-muted" id="mcStudentMatricId">Matric ID</small>
                                             </div>
 
-                                            <div class="form-group">
+                                            <div class="form-groumarkMedical Certificates Sectionp">
                                                 <label for="mcAbsentDate">Select Absent Date:</label>
                                                 <select class="form-control" id="mcAbsentDate" name="date" required>
                                                     <option value="">Choose a date...</option>
@@ -270,6 +270,11 @@
                                                 </div>
                                             </div>
                                         </div>
+                                         {{-- Medical Certificates Section --}}
+                        <h6 class="text-muted mb-3">Medical Certificates / Excuses</h6>
+                        <div id="medicalCertificates" class="mb-4">
+                            <p class="text-center text-muted">Loading MC records...</p>
+                        </div>
 
                                         {{-- Recent Attendance Records --}}
                                         <h6 class="text-muted mb-3">Recent Attendance Records</h6>
@@ -564,6 +569,37 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+/* Medical Certificate Card Styles */
+.border-left-warning {
+    border-left: 4px solid #ffc107;
+}
+
+.card-body.py-3 {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+#medicalCertificates .card {
+    box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.24);
+    transition: box-shadow 0.3s cubic-bezier(.25,.8,.25,1);
+}
+
+#medicalCertificates .card:hover {
+    box-shadow: 0 3px 6px rgba(0,0,0,.16), 0 3px 6px rgba(0,0,0,.23);
+}
+
+/* File icon styling */
+.mdi-file-pdf {
+    color: #dc3545 !important;
+}
+
+.mdi-file-image {
+    color: #28a745 !important;
+}
+
+.mdi-file {
+    color: #6c757d !important;
+}
 </style>
 
 <script>
@@ -599,6 +635,7 @@ function viewStudentAttendance(enrollmentId) {
 }
 
 // Function to show student profile modal
+// Updated function to show student profile modal
 function showStudentProfile(studentData) {
     console.log('Showing profile for student:', studentData);
 
@@ -642,6 +679,9 @@ function showStudentProfile(studentData) {
 
     // Load recent attendance records via AJAX
     loadRecentAttendanceRecords(studentData.enrollment_id);
+
+    // Load medical certificates via AJAX - THIS WAS MISSING!
+    loadMedicalCertificates(studentData.enrollment_id);
 
     // Update the "View Full Attendance" button
     document.getElementById('viewFullAttendanceBtn').onclick = function() {
@@ -793,6 +833,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // NEW: Function to handle MC upload
 // Simplified version for debugging
+// Replace your existing handleMcUpload function with this one:
+
 function handleMcUpload() {
     console.log('handleMcUpload called');
 
@@ -804,9 +846,20 @@ function handleMcUpload() {
     // Get form values
     const selectedDate = document.getElementById('mcAbsentDate').value;
     const reason = document.getElementById('mcReason').value;
+    const fileInput = document.getElementById('mcFile');
 
     console.log('Selected date:', selectedDate);
     console.log('Reason:', reason);
+    console.log('File input:', fileInput);
+    console.log('Has file:', fileInput.files.length > 0);
+
+    if (fileInput.files.length > 0) {
+        console.log('File details:', {
+            name: fileInput.files[0].name,
+            size: fileInput.files[0].size,
+            type: fileInput.files[0].type
+        });
+    }
 
     if (!selectedDate || !reason.trim()) {
         alert('Please fill in all required fields.');
@@ -824,24 +877,35 @@ function handleMcUpload() {
     // Show loading state
     const submitBtn = document.querySelector('#mcUploadForm button[type="submit"]');
     const originalBtnText = submitBtn.innerHTML;
-    submitBtn.innerHTML = 'Uploading...';
+    submitBtn.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Uploading...';
     submitBtn.disabled = true;
 
-    // Simple fetch without FormData first
-    const data = {
-        date: selectedDate,
-        reason: reason.trim(),
-        _token: '{{ csrf_token() }}'
-    };
+    // FIXED: Use FormData to properly handle file uploads
+    const formData = new FormData();
+    formData.append('date', selectedDate);
+    formData.append('reason', reason.trim());
+    formData.append('_token', '{{ csrf_token() }}');
+
+    // Add file if selected
+    if (fileInput.files.length > 0) {
+        formData.append('mc_file', fileInput.files[0]);
+        console.log('File added to FormData:', fileInput.files[0].name);
+    }
+
+    // DEBUG: Log FormData contents
+    console.log('FormData contents:');
+    for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+    }
 
     fetch(url, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}',
             'Accept': 'application/json'
+            // DON'T set Content-Type when using FormData - let browser set it automatically
         },
-        body: JSON.stringify(data)
+        body: formData // Use FormData instead of JSON
     })
     .then(response => {
         console.log('Response received:', response);
@@ -859,14 +923,17 @@ function handleMcUpload() {
 
             if (data.success) {
                 alert('Success: ' + data.message);
+                if (data.debug) {
+                    console.log('Upload debug info:', data.debug);
+                }
                 $('#mcUploadModal').modal('hide');
-                location.reload();
+                location.reload(); // Refresh to see the updated data
             } else {
                 alert('Error: ' + (data.error || 'Unknown error'));
             }
         } catch (e) {
             console.error('JSON parse error:', e);
-            alert('Server returned invalid response: ' + text.substring(0, 200));
+            alert('Server returned invalid response. Check console for details.');
         }
     })
     .catch(error => {
@@ -917,6 +984,81 @@ $(document).ready(function() {
             }
         }
     });
+
 });
+// Function to load medical certificates for a student
+function loadMedicalCertificates(enrollmentId) {
+    const courseId = {{ $course->id }};
+
+    // Show loading message
+    document.getElementById('medicalCertificates').innerHTML = '<p class="text-center text-muted">Loading MC records...</p>';
+
+    // Make AJAX request to fetch medical certificates
+    fetch(`/lecturer/courses/${courseId}/student/${enrollmentId}/medical-certificates`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            displayMedicalCertificates(data);
+        })
+        .catch(error => {
+            console.error('Error loading medical certificates:', error);
+            document.getElementById('medicalCertificates').innerHTML =
+                '<p class="text-center text-muted">Error loading MC records.</p>';
+        });
+}
+
+// Function to display medical certificates
+function displayMedicalCertificates(medicalCertificates) {
+    const container = document.getElementById('medicalCertificates');
+
+    if (medicalCertificates.length === 0) {
+        container.innerHTML = '<p class="text-center text-muted">No medical certificates found.</p>';
+        return;
+    }
+
+    let html = '<div class="row">';
+
+    medicalCertificates.forEach(mc => {
+        const hasFile = mc.has_file;
+        const fileIcon = mc.file_icon || 'mdi-file';
+
+        html += `
+            <div class="col-12 mb-3">
+                <div class="card border-left-warning">
+                    <div class="card-body py-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">${mc.date}</h6>
+                                <p class="text-muted mb-2">${mc.reason}</p>
+                                <small class="text-muted">Uploaded: ${mc.uploaded_at}</small>
+                            </div>
+                            <div class="text-right">
+                                ${hasFile ? `
+                                    <div class="mb-2">
+                                        <i class="mdi ${fileIcon} text-primary" style="font-size: 1.5rem;"></i>
+                                        <br>
+                                        <small class="text-muted">${mc.file_size}</small>
+                                    </div>
+                                    <a href="${mc.file_url}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                        <i class="mdi mdi-eye"></i> View
+                                    </a>
+                                ` : `
+                                    <span class="badge badge-secondary">No File</span>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+}
 </script>
 @endsection

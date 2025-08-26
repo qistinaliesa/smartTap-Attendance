@@ -8,7 +8,11 @@ use App\Models\Card;
 use App\Models\Attendance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\MedicalCertificate;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+
+
 
 class LecturerCourseController extends Controller
 {
@@ -488,7 +492,7 @@ class LecturerCourseController extends Controller
         return view('student_attendance', compact('formattedAttendances', 'course', 'enrollment'));
     }
 
-    public function getRecentAttendanceRecords(Course $course, $enrollmentId)
+    public function getRecentAttendanceRecords(Course $course, $enrollment)
     {
         $lecturer = Auth::guard('lecturer')->user();
 
@@ -497,17 +501,18 @@ class LecturerCourseController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        // Get the enrollment record
-        $enrollment = Enrollment::where('course_id', $course->id)
-                               ->where('id', $enrollmentId)
+        // Get the enrollment record - $enrollment is now the ID value
+        $enrollmentRecord = Enrollment::where('course_id', $course->id)
+                               ->where('id', $enrollment) // Use $enrollment instead of $enrollmentId
                                ->with('card')
                                ->first();
 
-        if (!$enrollment || !$enrollment->card) {
+        if (!$enrollmentRecord || !$enrollmentRecord->card) {
             return response()->json(['error' => 'Student not found'], 404);
         }
 
-        // FIXED: Get ALL enrolled students' card IDs for THIS COURSE
+        // ... rest of your existing code stays the same, just replace $enrollment->card with $enrollmentRecord->card
+        // Get ALL enrolled students' card IDs for THIS COURSE
         $enrolledCardIds = Enrollment::where('course_id', $course->id)
                                     ->with('card')
                                     ->get()
@@ -518,20 +523,19 @@ class LecturerCourseController extends Controller
             return response()->json([]);
         }
 
-        // FIXED: Get class dates where attendance was taken for THIS COURSE
-        // Only count dates where at least one enrolled student attended
+        // Get class dates where attendance was taken for THIS COURSE
         $allClassDates = Attendance::whereIn('card_id', $enrolledCardIds)
                                   ->distinct('date')
                                   ->orderBy('date', 'desc')
                                   ->pluck('date')
-                                  ->take(10); // Get last 10 class dates
+                                  ->take(10);
 
         if ($allClassDates->isEmpty()) {
             return response()->json([]);
         }
 
-        // FIXED: Get THIS student's attendance records for the class dates
-        $studentAttendances = Attendance::where('card_id', $enrollment->card->id)
+        // Get THIS student's attendance records for the class dates
+        $studentAttendances = Attendance::where('card_id', $enrollmentRecord->card->id)
                                        ->whereIn('date', $allClassDates)
                                        ->get()
                                        ->keyBy('date');
@@ -567,9 +571,9 @@ class LecturerCourseController extends Controller
     }
 
     /**
-     * NEW: Mark student as present with MC/Reason (no database storage)
+     * FIXED: Changed parameter from $enrollmentId to $enrollment
      */
-    public function markPresentWithReason(Request $request, Course $course, $enrollmentId)
+    public function getStudentMedicalCertificates(Course $course, $enrollment)
     {
         $lecturer = Auth::guard('lecturer')->user();
 
@@ -578,125 +582,315 @@ class LecturerCourseController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        // Validate input
-        $request->validate([
-            'date' => 'required|date',
-            'reason' => 'required|string|max:255',
-            'mc_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048'
-        ]);
+        $medicalCertificates = MedicalCertificate::where('enrollment_id', $enrollment) // Use $enrollment instead of $enrollmentId
+                                               ->where('course_id', $course->id)
+                                               ->orderBy('absence_date', 'desc')
+                                               ->get();
 
-        // Get the enrollment record
-        $enrollment = Enrollment::where('course_id', $course->id)
-                               ->where('id', $enrollmentId)
-                               ->with('card')
-                               ->first();
+        $formatted = $medicalCertificates->map(function($mc) {
+            return [
+                'id' => $mc->id,
+                'date' => $mc->absence_date->format('M d, Y'),
+                'reason' => $mc->reason,
+                'has_file' => !is_null($mc->file_path),
+                'file_name' => $mc->original_filename,
+                'file_size' => $mc->file_size_formatted,
+                'file_icon' => $mc->file_icon,
+                'uploaded_at' => $mc->uploaded_at->format('M d, Y H:i'),
+                'file_url' => $mc->file_path ? route('lecturer.mc.download', ['course' => $mc->course_id, 'mc' => $mc->id]) : null
+            ];
+        });
 
-        if (!$enrollment || !$enrollment->card) {
-            return response()->json(['error' => 'Student not found'], 404);
-        }
-
-        $date = $request->input('date');
-        $reason = $request->input('reason');
-
-        // Check if student already has attendance for this date
-        $existingAttendance = Attendance::where('card_id', $enrollment->card->id)
-                                       ->where('date', $date)
-                                       ->first();
-
-        if ($existingAttendance) {
-            return response()->json(['error' => 'Student already marked as present for this date'], 400);
-        }
-
-        // Handle file upload temporarily (not stored permanently as requested)
-        $fileName = null;
-        if ($request->hasFile('mc_file')) {
-            $file = $request->file('mc_file');
-            $fileName = $file->getClientOriginalName();
-            // File is uploaded but we're not storing it permanently as per requirement
-        }
-
-        try {
-            // Create attendance record automatically marking student as present
-            Attendance::create([
-                'card_id' => $enrollment->card->id,
-                'date' => $date,
-                'time_in' => '08:00:00', // Default time or you can make this configurable
-                'time_out' => null,
-                // Note: We're not storing reason/MC file as per requirement
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Student marked as present with reason: ' . $reason .
-                           ($fileName ? ' (File: ' . $fileName . ')' : ''),
-                'student_name' => $enrollment->card->name,
-                'date' => Carbon::parse($date)->format('M d, Y'),
-                'reason' => $reason,
-                'file_name' => $fileName
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Failed to mark student as present: ' . $e->getMessage()
-            ], 500);
-        }
+        return response()->json($formatted);
     }
 
+
+    public function markPresentWithReason(Request $request, Course $course, $enrollment)
+{
+    $lecturer = Auth::guard('lecturer')->user();
+
+    // Check authorization
+    if ($course->lecturer_id !== $lecturer->id) {
+        return response()->json(['error' => 'Unauthorized'], 403);
+    }
+
+    // DEBUG: Log what we're receiving
+    \Log::info('MC Upload Debug:', [
+        'has_file' => $request->hasFile('mc_file'),
+        'file_data' => $request->file('mc_file') ? [
+            'original_name' => $request->file('mc_file')->getClientOriginalName(),
+            'mime_type' => $request->file('mc_file')->getMimeType(),
+            'size' => $request->file('mc_file')->getSize(),
+            'is_valid' => $request->file('mc_file')->isValid()
+        ] : null,
+        'all_files' => $request->allFiles(),
+        'request_data' => $request->all()
+    ]);
+
+    // Validate input
+    $request->validate([
+        'date' => 'required|date',
+        'reason' => 'required|string|max:500',
+        'mc_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048'
+    ]);
+
+    // Get the enrollment record
+    $enrollmentRecord = Enrollment::where('course_id', $course->id)
+                           ->where('id', $enrollment)
+                           ->with('card')
+                           ->first();
+
+    if (!$enrollmentRecord || !$enrollmentRecord->card) {
+        return response()->json(['error' => 'Student not found'], 404);
+    }
+
+    $date = $request->input('date');
+    $reason = $request->input('reason');
+
+    // Check if student already has attendance for this date
+    $existingAttendance = Attendance::where('card_id', $enrollmentRecord->card->id)
+                                   ->where('date', $date)
+                                   ->first();
+
+    if ($existingAttendance) {
+        return response()->json(['error' => 'Student already marked as present for this date'], 400);
+    }
+
+    // Check if MC already exists for this date
+    $existingMc = MedicalCertificate::where('enrollment_id', $enrollment)
+                                   ->where('absence_date', $date)
+                                   ->first();
+
+    if ($existingMc) {
+        return response()->json(['error' => 'MC/Reason already uploaded for this date'], 400);
+    }
+
+    try {
+        \DB::beginTransaction();
+
+        // Handle file upload
+        $filePath = null;
+        $originalFilename = null;
+        $fileType = null;
+        $fileSize = null;
+
+        if ($request->hasFile('mc_file') && $request->file('mc_file')->isValid()) {
+            $file = $request->file('mc_file');
+            $originalFilename = $file->getClientOriginalName();
+            $fileType = $file->getMimeType();
+            $fileSize = $file->getSize();
+
+            // Generate unique filename
+            $extension = $file->getClientOriginalExtension();
+            $filename = 'mc_' . $enrollment . '_' . date('Y-m-d', strtotime($date)) . '_' . time() . '.' . $extension;
+
+            // DEBUG: Check if storage directory exists and is writable
+            $storagePath = storage_path('app/public/medical_certificates');
+            if (!file_exists($storagePath)) {
+                mkdir($storagePath, 0755, true);
+                \Log::info('Created storage directory: ' . $storagePath);
+            }
+
+            // Store file in 'medical_certificates' directory
+            $filePath = $file->storeAs('medical_certificates', $filename, 'public');
+
+            // DEBUG: Verify file was stored
+            $fullPath = storage_path('app/public/' . $filePath);
+            \Log::info('File storage result:', [
+                'file_path' => $filePath,
+                'full_path' => $fullPath,
+                'file_exists' => file_exists($fullPath),
+                'file_size_on_disk' => file_exists($fullPath) ? filesize($fullPath) : 'not found'
+            ]);
+        }
+
+        // Create MC record
+        $medicalCertificate = MedicalCertificate::create([
+            'enrollment_id' => $enrollment,
+            'course_id' => $course->id,
+            'absence_date' => $date,
+            'reason' => $reason,
+            'file_path' => $filePath,
+            'original_filename' => $originalFilename,
+            'file_type' => $fileType,
+            'file_size' => $fileSize,
+            'uploaded_at' => now(),
+            'uploaded_by' => $lecturer->id
+        ]);
+
+        // DEBUG: Log what was saved to database
+        \Log::info('MC Record created:', [
+            'id' => $medicalCertificate->id,
+            'file_path' => $medicalCertificate->file_path,
+            'original_filename' => $medicalCertificate->original_filename,
+            'file_size' => $medicalCertificate->file_size
+        ]);
+
+        // Create attendance record automatically marking student as present
+        Attendance::create([
+            'card_id' => $enrollmentRecord->card->id,
+            'date' => $date,
+            'time_in' => '08:00:00', // Default time for MC-based attendance
+            'time_out' => null,
+        ]);
+
+        \DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'MC/Reason uploaded successfully and student marked as present.',
+            'student_name' => $enrollmentRecord->card->name,
+            'date' => \Carbon\Carbon::parse($date)->format('M d, Y'),
+            'reason' => $reason,
+            'file_name' => $originalFilename,
+            'mc_id' => $medicalCertificate->id,
+            'debug' => [
+                'file_uploaded' => !is_null($filePath),
+                'file_path' => $filePath
+            ]
+        ]);
+
+    } catch (\Exception $e) {
+        \DB::rollBack();
+        \Log::error('MC Upload Error:', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        return response()->json([
+            'error' => 'Failed to upload MC/Reason: ' . $e->getMessage()
+        ], 500);
+    }
+}
     /**
      * NEW: Get class dates where student was absent
      */
-    public function getAbsentDates(Course $course, $enrollmentId)
-    {
-        $lecturer = Auth::guard('lecturer')->user();
+    public function getAbsentDates(Course $course, $enrollment)
+{
+    $lecturer = Auth::guard('lecturer')->user();
 
-        // Check authorization
-        if ($course->lecturer_id !== $lecturer->id) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
-        // Get the enrollment record
-        $enrollment = Enrollment::where('course_id', $course->id)
-                               ->where('id', $enrollmentId)
-                               ->with('card')
-                               ->first();
-
-        if (!$enrollment || !$enrollment->card) {
-            return response()->json(['error' => 'Student not found'], 404);
-        }
-
-        // Get all enrolled students' card IDs for this course
-        $enrolledCardIds = Enrollment::where('course_id', $course->id)
-                                    ->with('card')
-                                    ->get()
-                                    ->pluck('card.id')
-                                    ->filter();
-
-        // Get all class dates for this course
-        $allClassDates = Attendance::whereIn('card_id', $enrolledCardIds)
-                                  ->distinct('date')
-                                  ->orderBy('date', 'desc')
-                                  ->pluck('date');
-
-        if ($allClassDates->isEmpty()) {
-            return response()->json([]);
-        }
-
-        // Get dates where this student attended
-        $attendedDates = Attendance::where('card_id', $enrollment->card->id)
-                                  ->whereIn('date', $allClassDates)
-                                  ->pluck('date')
-                                  ->toArray();
-
-        // Find absent dates
-        $absentDates = $allClassDates->filter(function($date) use ($attendedDates) {
-            return !in_array($date, $attendedDates);
-        })->map(function($date) {
-            return [
-                'value' => $date,
-                'label' => Carbon::parse($date)->format('M d, Y (l)')
-            ];
-        })->values();
-
-        return response()->json($absentDates);
+    // Check authorization
+    if ($course->lecturer_id !== $lecturer->id) {
+        return response()->json(['error' => 'Unauthorized'], 403);
     }
+
+    // Get the enrollment record
+    $enrollmentRecord = Enrollment::where('course_id', $course->id)
+                           ->where('id', $enrollment) // Use $enrollment instead of $enrollmentId
+                           ->with('card')
+                           ->first();
+
+    if (!$enrollmentRecord || !$enrollmentRecord->card) {
+        return response()->json(['error' => 'Student not found'], 404);
+    }
+
+    // ... rest of your existing code stays the same, just use $enrollmentRecord instead of $enrollment
+    // Get all enrolled students' card IDs for this course
+    $enrolledCardIds = Enrollment::where('course_id', $course->id)
+                                ->with('card')
+                                ->get()
+                                ->pluck('card.id')
+                                ->filter();
+
+    // Get all class dates for this course
+    $allClassDates = Attendance::whereIn('card_id', $enrolledCardIds)
+                              ->distinct('date')
+                              ->orderBy('date', 'desc')
+                              ->pluck('date');
+
+    if ($allClassDates->isEmpty()) {
+        return response()->json([]);
+    }
+
+    // Get dates where this student attended
+    $attendedDates = Attendance::where('card_id', $enrollmentRecord->card->id)
+                              ->whereIn('date', $allClassDates)
+                              ->pluck('date')
+                              ->toArray();
+
+    // Find absent dates
+    $absentDates = $allClassDates->filter(function($date) use ($attendedDates) {
+        return !in_array($date, $attendedDates);
+    })->map(function($date) {
+        return [
+            'value' => $date,
+            'label' => Carbon::parse($date)->format('M d, Y (l)')
+        ];
+    })->values();
+
+    return response()->json($absentDates);
+}
+
+
+
+/**
+ * NEW: Get student's medical certificates for the course
+ */
+
+
+/**
+ * NEW: Download/View MC file
+ */
+
+public function downloadMedicalCertificate(Course $course, MedicalCertificate $mc)
+{
+    $lecturer = Auth::guard('lecturer')->user();
+
+    // Check authorization
+    if ($course->lecturer_id !== $lecturer->id || $mc->course_id !== $course->id) {
+        abort(403, 'Unauthorized');
+    }
+
+    if (!$mc->file_path || !Storage::disk('public')->exists($mc->file_path)) {
+        abort(404, 'File not found');
+    }
+
+    $filePath = Storage::disk('public')->path($mc->file_path);
+
+    return response()->file($filePath, [
+        'Content-Disposition' => 'inline; filename="' . $mc->original_filename . '"'
+    ]);
+}
+
+/**
+ * NEW: Delete MC file and record
+ */
+public function deleteMedicalCertificate(Course $course, MedicalCertificate $mc)
+{
+    $lecturer = Auth::guard('lecturer')->user();
+
+    // Check authorization
+    if ($course->lecturer_id !== $lecturer->id || $mc->course_id !== $course->id) {
+        return response()->json(['error' => 'Unauthorized'], 403);
+    }
+
+    try {
+        \DB::beginTransaction();
+
+        // Find and remove the corresponding attendance record
+        $attendanceRecord = Attendance::where('card_id', $mc->enrollment->card->id)
+                                     ->where('date', $mc->absence_date)
+                                     ->where('time_in', '08:00:00') // MC-based attendance
+                                     ->first();
+
+        if ($attendanceRecord) {
+            $attendanceRecord->delete();
+        }
+
+        // Delete MC record (file will be deleted automatically via model boot method)
+        $mc->delete();
+
+        \DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'MC record deleted successfully'
+        ]);
+
+    } catch (\Exception $e) {
+        \DB::rollBack();
+        return response()->json([
+            'error' => 'Failed to delete MC record: ' . $e->getMessage()
+        ], 500);
+    }
+}
 }
