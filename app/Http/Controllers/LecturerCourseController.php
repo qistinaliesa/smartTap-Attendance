@@ -11,8 +11,11 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\MedicalCertificate;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
-
-
+use Illuminate\Support\Facades\Mail;
+use App\Mail\AttendanceWarningMail;
+use Illuminate\Support\Facades\Log;  // ✅ FIXED: Already imported
+use Illuminate\Support\Facades\DB;   // ✅ FIXED: Added missing import
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class LecturerCourseController extends Controller
 {
@@ -615,7 +618,7 @@ class LecturerCourseController extends Controller
     }
 
     // DEBUG: Log what we're receiving
-    \Log::info('MC Upload Debug:', [
+    Log::info('MC Upload Debug:', [  // ✅ FIXED: Now properly imported
         'has_file' => $request->hasFile('mc_file'),
         'file_data' => $request->file('mc_file') ? [
             'original_name' => $request->file('mc_file')->getClientOriginalName(),
@@ -666,7 +669,7 @@ class LecturerCourseController extends Controller
     }
 
     try {
-        \DB::beginTransaction();
+        DB::beginTransaction(); // ✅ FIXED: Now properly imported
 
         // Handle file upload
         $filePath = null;
@@ -688,7 +691,7 @@ class LecturerCourseController extends Controller
             $storagePath = storage_path('app/public/medical_certificates');
             if (!file_exists($storagePath)) {
                 mkdir($storagePath, 0755, true);
-                \Log::info('Created storage directory: ' . $storagePath);
+                Log::info('Created storage directory: ' . $storagePath); // ✅ FIXED
             }
 
             // Store file in 'medical_certificates' directory
@@ -696,7 +699,7 @@ class LecturerCourseController extends Controller
 
             // DEBUG: Verify file was stored
             $fullPath = storage_path('app/public/' . $filePath);
-            \Log::info('File storage result:', [
+            Log::info('File storage result:', [ // ✅ FIXED
                 'file_path' => $filePath,
                 'full_path' => $fullPath,
                 'file_exists' => file_exists($fullPath),
@@ -719,7 +722,7 @@ class LecturerCourseController extends Controller
         ]);
 
         // DEBUG: Log what was saved to database
-        \Log::info('MC Record created:', [
+        Log::info('MC Record created:', [ // ✅ FIXED
             'id' => $medicalCertificate->id,
             'file_path' => $medicalCertificate->file_path,
             'original_filename' => $medicalCertificate->original_filename,
@@ -734,7 +737,7 @@ class LecturerCourseController extends Controller
             'time_out' => null,
         ]);
 
-        \DB::commit();
+        DB::commit(); // ✅ FIXED
 
         return response()->json([
             'success' => true,
@@ -751,8 +754,8 @@ class LecturerCourseController extends Controller
         ]);
 
     } catch (\Exception $e) {
-        \DB::rollBack();
-        \Log::error('MC Upload Error:', [
+        DB::rollBack(); // ✅ FIXED
+        Log::error('MC Upload Error:', [ // ✅ FIXED
             'error' => $e->getMessage(),
             'trace' => $e->getTraceAsString()
         ]);
@@ -864,7 +867,7 @@ public function deleteMedicalCertificate(Course $course, MedicalCertificate $mc)
     }
 
     try {
-        \DB::beginTransaction();
+        DB::beginTransaction(); // ✅ FIXED
 
         // Find and remove the corresponding attendance record
         $attendanceRecord = Attendance::where('card_id', $mc->enrollment->card->id)
@@ -879,7 +882,7 @@ public function deleteMedicalCertificate(Course $course, MedicalCertificate $mc)
         // Delete MC record (file will be deleted automatically via model boot method)
         $mc->delete();
 
-        \DB::commit();
+        DB::commit(); // ✅ FIXED
 
         return response()->json([
             'success' => true,
@@ -887,10 +890,99 @@ public function deleteMedicalCertificate(Course $course, MedicalCertificate $mc)
         ]);
 
     } catch (\Exception $e) {
-        \DB::rollBack();
+        DB::rollBack(); // ✅ FIXED
         return response()->json([
             'error' => 'Failed to delete MC record: ' . $e->getMessage()
         ], 500);
     }
 }
+
+public function sendAttendanceWarning(Request $request, Course $course, $enrollment)
+{
+    $lecturer = Auth::guard('lecturer')->user();
+
+    if ($course->lecturer_id !== $lecturer->id) {
+        return response()->json(['error' => 'Unauthorized'], 403);
+    }
+
+    // Enhanced validation
+    $validated = $request->validate([
+        'email' => 'required|email|max:255',
+        'subject' => 'required|string|max:255',
+        'message' => 'required|string|max:2000'
+    ]);
+
+    $enrollmentRecord = Enrollment::where('course_id', $course->id)
+        ->where('id', $enrollment)
+        ->with('card')
+        ->first();
+
+    if (!$enrollmentRecord || !$enrollmentRecord->card) {
+        return response()->json(['error' => 'Student not found'], 404);
+    }
+
+    try {
+        // ENHANCED DEBUGGING
+        Log::info('=== EMAIL SENDING DEBUG ===', [
+            'mail_driver' => config('mail.default'),
+            'smtp_host' => config('mail.mailers.smtp.host'),
+            'smtp_port' => config('mail.mailers.smtp.port'),
+            'smtp_username' => config('mail.mailers.smtp.username'),
+            'from_address' => config('mail.from.address'),
+            'from_name' => config('mail.from.name'),
+            'to_email' => $validated['email'],
+            'student_name' => $enrollmentRecord->card->name,
+            'course_code' => $course->course_code,
+            'lecturer_name' => $lecturer->name ?? 'Unknown'
+        ]);
+
+        // IMPROVED: Create the email data array properly
+        $emailData = [
+            'student_name'   => $enrollmentRecord->card->name,
+            'student_matric' => $enrollmentRecord->card->matric_id,
+            'subject'        => $validated['subject'],
+            'custom_message' => $validated['message'],
+            'course_code'    => $course->course_code,
+            'lecturer_name'  => $lecturer->name ?? 'Lecturer',
+        ];
+
+        Log::info('Email data prepared:', $emailData);
+
+        // FIXED: Send email with proper error handling
+        Mail::to($validated['email'])->send(new AttendanceWarningMail($emailData));
+
+        // REMOVED: The Mail::failures() check since it doesn't exist in newer Laravel versions
+        // The email sending is handled by the try-catch block instead
+
+        Log::info('Email sent successfully to: ' . $validated['email']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Warning email sent successfully to ' . $validated['email'],
+        ]);
+
+    } catch (TransportExceptionInterface $e) {
+        Log::error('SMTP Transport Error:', [
+            'error' => $e->getMessage(),
+            'code' => $e->getCode(),
+            'previous' => $e->getPrevious() ? $e->getPrevious()->getMessage() : null
+        ]);
+
+        return response()->json([
+            'error' => 'SMTP connection failed. Please check mail server configuration.',
+            'details' => config('app.debug') ? $e->getMessage() : 'Contact administrator'
+        ], 500);
+
+    } catch (\Exception $e) {
+        Log::error('General Email Error:', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'error' => 'Failed to send email: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
 }

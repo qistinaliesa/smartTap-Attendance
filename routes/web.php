@@ -9,6 +9,9 @@ use App\Http\Controllers\API\CardController;
 use App\Http\Controllers\LecturerController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\LecturerCourseController;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\AttendanceWarningMail;
+
 
 // Add this temporarily to your routes file for debugging
 Route::get('/debug-user', function () {
@@ -119,6 +122,10 @@ Route::middleware(['lecturer.auth'])->prefix('lecturer')->group(function () {
     Route::get('/courses/{course}/student/{enrollment}/medical-certificates', [LecturerCourseController::class, 'getStudentMedicalCertificates'])->name('lecturer.student.medical_certificates');
     Route::get('/courses/{course}/student/{enrollment}/absent-dates', [LecturerCourseController::class, 'getAbsentDates'])->name('lecturer.student.absent_dates');
     Route::post('/courses/{course}/student/{enrollment}/mark-present', [LecturerCourseController::class, 'markPresentWithReason'])->name('lecturer.student.mark_present');
+    Route::post('/courses/{course}/student/{enrollment}/send-warning',
+    [LecturerCourseController::class, 'sendAttendanceWarning']
+)->name('lecturer.student.send_warning');
+// In routes/web.php
 
     // Medical certificate file routes
     Route::get('/courses/{course}/mc/{mc}/download', [LecturerCourseController::class, 'downloadMedicalCertificate'])->name('lecturer.mc.download');

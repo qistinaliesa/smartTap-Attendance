@@ -138,7 +138,7 @@
                                                 <small class="text-muted" id="mcStudentMatricId">Matric ID</small>
                                             </div>
 
-                                            <div class="form-groumarkMedical Certificates Sectionp">
+                                            <div class="form-group">
                                                 <label for="mcAbsentDate">Select Absent Date:</label>
                                                 <select class="form-control" id="mcAbsentDate" name="date" required>
                                                     <option value="">Choose a date...</option>
@@ -172,6 +172,85 @@
                                 </div>
                             </div>
                         </div>
+
+                  {{-- Email Warning Modal --}}
+<div class="modal fade" id="emailWarningModal" tabindex="-1" role="dialog" aria-labelledby="emailWarningModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title" id="emailWarningModalLabel">
+          <i class="mdi mdi-email-alert"></i> Send Attendance Warning
+        </h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <!-- Form -->
+      <form id="emailWarningForm">
+        @csrf
+        <div class="modal-body">
+
+          <!-- Student Info -->
+          <div class="text-center mb-3">
+            <div class="avatar-lg mx-auto mb-2" id="emailStudentAvatar">
+              <div class="avatar-title bg-warning text-white rounded-circle"
+                   style="width: 60px; height: 60px; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;">
+              </div>
+            </div>
+            <h6 class="mb-1" id="emailStudentName">Student Name</h6>
+            <small class="text-muted" id="emailStudentId">Matric ID</small>
+          </div>
+
+          <!-- Warning Message -->
+          <div class="alert alert-warning">
+            <i class="mdi mdi-alert-triangle"></i>
+            <strong>Warning:</strong> This student has <span id="studentAbsenceCount">0</span> absences.
+          </div>
+
+          <!-- Email Fields -->
+          <div class="form-group">
+            <label for="studentEmail">To:</label>
+            <input type="email" class="form-control" id="studentEmail" name="email" placeholder="student@example.com" required>
+            <small class="text-muted">Enter the student's email address</small>
+          </div>
+
+          <div class="form-group">
+            <label for="emailSubject">Subject:</label>
+            <input type="text" class="form-control" id="emailSubject" name="subject"
+                   value="Reminder Regarding Class Attendance" required>
+          </div>
+
+          <div class="form-group">
+            <label for="emailMessage">Message:</label>
+            <textarea class="form-control" id="emailMessage" name="message" rows="10" required>
+I hope you're doing well. This is a gentle reminder that you have currently missed [Absence Count] classes, and your attendance stands at [Attendance Percentage].
+Please be advised that if you miss one more class, a formal warning letter will be issued.
+
+I encourage you to attend the remaining classes consistently to avoid further actions. If you are facing any issues affecting your attendance, feel free to reach out to me.
+
+Best regards,
+Your Lecturer
+            </textarea>
+
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning">
+            <i class="mdi mdi-send"></i> Send Warning
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
 
                         {{-- Student Profile Modal --}}
                         <div class="modal fade" id="studentProfileModal" tabindex="-1" role="dialog" aria-labelledby="studentProfileModalLabel" aria-hidden="true">
@@ -270,11 +349,12 @@
                                                 </div>
                                             </div>
                                         </div>
-                                         {{-- Medical Certificates Section --}}
-                        <h6 class="text-muted mb-3">Medical Certificates / Excuses</h6>
-                        <div id="medicalCertificates" class="mb-4">
-                            <p class="text-center text-muted">Loading MC records...</p>
-                        </div>
+
+                                        {{-- Medical Certificates Section --}}
+                                        <h6 class="text-muted mb-3">Medical Certificates / Excuses</h6>
+                                        <div id="medicalCertificates" class="mb-4">
+                                            <p class="text-center text-muted">Loading MC records...</p>
+                                        </div>
 
                                         {{-- Recent Attendance Records --}}
                                         <h6 class="text-muted mb-3">Recent Attendance Records</h6>
@@ -372,42 +452,47 @@
                                                         {{ $enrollment->enrolled_at ? \Carbon\Carbon::parse($enrollment->enrolled_at)->format('M d, Y') : 'N/A' }}
                                                     </small>
                                                 </td>
-                                                <td>
-                                                    <div class="btn-group btn-group-sm" role="group">
-                                                        <button type="button" class="btn btn-outline-info" title="View Past Attendance" onclick="viewStudentAttendance({{ $enrollment->id }})">
-                                                            <i class="mdi mdi-calendar-check"></i>
-                                                        </button>
-                                                        <button type="button" class="btn btn-outline-primary" title="View Profile"
-        onclick="showStudentProfile({{ json_encode([
-            'enrollment_id' => $enrollment->id,
-            'name' => $enrollment->card->name ?? 'N/A',
-            'matric_id' => $enrollment->card->matric_id ?? 'N/A',
-            'card_uid' => $enrollment->card->uid ?? 'N/A',
-            'enrolled_at' => $enrollment->enrolled_at ? \Carbon\Carbon::parse($enrollment->enrolled_at)->format('M d, Y') : 'N/A',
-            'attendance_percentage' => $attendancePercentage,
-            'attendance_count' => $studentData['attendance_count'],
-            'absences' => $absences,
-            'status' => $status,
-            'total_classes' => $studentData['total_classes'] ?? $attendanceStats['total_classes']
-        ]) }})">
-    <i class="mdi mdi-account-circle"></i>
-</button>
-                                                        @if($absences > 0)
-                                                            <button type="button" class="btn btn-outline-warning" title="Upload MC/Reason" onclick="showMcUploadModal({{ json_encode([
+                                               <td>
+    <div class="d-flex gap-1" role="group">
+        <button type="button" class="btn btn-outline-primary btn-sm" title="View Profile"
+            onclick="showStudentProfile({{ json_encode([
+                'enrollment_id' => $enrollment->id,
+                'name' => $enrollment->card->name ?? 'N/A',
+                'matric_id' => $enrollment->card->matric_id ?? 'N/A',
+                'card_uid' => $enrollment->card->uid ?? 'N/A',
+                'enrolled_at' => $enrollment->enrolled_at ? \Carbon\Carbon::parse($enrollment->enrolled_at)->format('M d, Y') : 'N/A',
+                'attendance_percentage' => $attendancePercentage,
+                'attendance_count' => $studentData['attendance_count'],
+                'absences' => $absences,
+                'status' => $status,
+                'total_classes' => $studentData['total_classes'] ?? $attendanceStats['total_classes']
+            ]) }})">
+            <i class="mdi mdi-account-circle"></i>
+        </button>
+
+        @if($absences > 0)
+            <button type="button" class="btn btn-outline-warning btn-sm" title="Upload MC/Reason" onclick="showMcUploadModal({{ json_encode([
                 'enrollment_id' => $enrollment->id,
                 'name' => $enrollment->card->name ?? 'N/A',
                 'matric_id' => $enrollment->card->matric_id ?? 'N/A'
             ]) }})">
-                                                                <i class="mdi mdi-file-upload"></i>
-                                                            </button>
-                                                        @endif
-                                                        @if($hasWarning)
-                                                            <button type="button" class="btn btn-outline-warning btn-sm" title="Warning: Low Attendance">
-                                                                <i class="mdi mdi-alert-triangle"></i>
-                                                            </button>
-                                                        @endif
-                                                    </div>
-                                                </td>
+                <i class="mdi mdi-file-upload"></i>
+            </button>
+        @endif
+
+        @if($absences >= 3)
+            <button type="button" class="btn btn-outline-danger btn-sm" title="Send Attendance Warning" onclick="showEmailWarningModal({{ json_encode([
+                'enrollment_id' => $enrollment->id,
+                'name' => $enrollment->card->name ?? 'N/A',
+                'matric_id' => $enrollment->card->matric_id ?? 'N/A',
+                'absences' => $absences,
+                'attendance_percentage' => $attendancePercentage
+            ]) }})">
+              ⚠️
+    </button>
+        @endif
+    </div>
+</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -459,7 +544,21 @@
     font-weight: 600;
     color: #495057;
 }
+.btn-outline-danger {
+    color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    background-color: transparent !important;
+}
 
+.btn-outline-danger:hover {
+    color: #fff !important;
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+}
+
+.btn-group .btn {
+    margin-right: 2px;
+}
 .btn-group-sm > .btn, .btn-sm {
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
@@ -603,8 +702,277 @@
 </style>
 
 <script>
+
 // Global variable to store current student data for MC upload
 let currentMcStudent = null;
+let currentWarningStudent = null;
+// Fixed email warning functionality
+function showEmailWarningModal(studentData) {
+    console.log('Showing email warning modal for student:', studentData);
+    currentWarningStudent = studentData;
+
+    // Update modal content with student data
+    document.getElementById('emailStudentName').textContent = studentData.name;
+    document.getElementById('emailStudentId').textContent = studentData.matric_id;
+    document.getElementById('studentAbsenceCount').textContent = studentData.absences;
+
+    // Update avatar
+    const avatarElement = document.querySelector('#emailStudentAvatar .avatar-title');
+    avatarElement.textContent = studentData.name.charAt(0).toUpperCase();
+
+    // Reset form
+    document.getElementById('emailWarningForm').reset();
+
+    // Pre-fill email message with student data
+    const messageTemplate = document.getElementById('emailMessage').value;
+    const personalizedMessage = messageTemplate
+        .replace(/\[Student Name\]/g, studentData.name)
+        .replace(/\[Absence Count\]/g, studentData.absences)
+        .replace(/\[Attendance Percentage\]/g, studentData.attendance_percentage + '%');
+
+    document.getElementById('emailMessage').value = personalizedMessage;
+
+    // Show the modal
+    $('#emailWarningModal').modal('show');
+}
+
+function handleEmailWarning() {
+    if (!currentWarningStudent) {
+        console.error('No student selected');
+        alert('No student selected. Please try again.');
+        return;
+    }
+
+    // Get form values
+    const email = document.getElementById('studentEmail').value.trim();
+    const subject = document.getElementById('emailSubject').value.trim();
+    const message = document.getElementById('emailMessage').value.trim();
+
+    // Enhanced validation
+    if (!email || !subject || !message) {
+        alert('Please fill in all required fields.');
+        return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        alert('Please enter a valid email address.');
+        return;
+    }
+
+    // Get CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (!csrfToken) {
+        console.error('CSRF token not found');
+        alert('Security token missing. Please refresh the page.');
+        return;
+    }
+
+    // Construct URL - FIXED to match your route structure
+    const courseId = {{ $course->id ?? 'null' }};
+    const enrollmentId = currentWarningStudent.enrollment_id;
+
+    if (!courseId || !enrollmentId) {
+        console.error('Missing course ID or enrollment ID', { courseId, enrollmentId });
+        alert('Missing required data. Please refresh the page.');
+        return;
+    }
+
+    const url = `/lecturer/courses/${courseId}/student/${enrollmentId}/send-warning`;
+
+    console.log('=== EMAIL SENDING DEBUG ===');
+    console.log('URL:', url);
+    console.log('Course ID:', courseId);
+    console.log('Enrollment ID:', enrollmentId);
+    console.log('CSRF Token:', csrfToken ? 'Present' : 'Missing');
+    console.log('Email data:', { email, subject, messageLength: message.length });
+
+    // Show loading state
+    const submitBtn = document.querySelector('#emailWarningForm button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Sending...';
+    submitBtn.disabled = true;
+
+    // Create FormData with proper structure
+    const formData = new FormData();
+    formData.append('email', email);
+    formData.append('subject', subject);
+    formData.append('message', message);
+    formData.append('_token', csrfToken);
+
+    // Debug FormData
+    console.log('FormData contents:');
+    for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+    }
+
+    // Make the request
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+            // Don't set Content-Type or X-CSRF-TOKEN when using FormData
+        },
+        body: formData
+    })
+    .then(async response => {
+        console.log('Response received:', {
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok,
+            headers: Object.fromEntries(response.headers.entries())
+        });
+
+        const responseText = await response.text();
+        console.log('Raw response text:', responseText);
+
+        // Check if response is OK
+        if (!response.ok) {
+            let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+
+            // Try to parse error response
+            try {
+                const errorData = JSON.parse(responseText);
+                if (errorData.message) errorMessage = errorData.message;
+                if (errorData.error) errorMessage = errorData.error;
+                if (errorData.errors) {
+                    errorMessage = Object.values(errorData.errors).flat().join(', ');
+                }
+            } catch (e) {
+                // If JSON parsing fails, use the raw response
+                if (responseText) errorMessage = responseText;
+            }
+
+            throw new Error(errorMessage);
+        }
+
+        // Parse successful response
+        try {
+            const data = JSON.parse(responseText);
+            console.log('Parsed response:', data);
+            return data;
+        } catch (parseError) {
+            console.error('JSON Parse Error:', parseError);
+            console.error('Response was:', responseText);
+            throw new Error(`Server returned invalid JSON: ${responseText.substring(0, 200)}...`);
+        }
+    })
+    .then(data => {
+        console.log('Success response:', data);
+
+        if (data.success) {
+            // Success
+            alert(`✅ ${data.message}`);
+            $('#emailWarningModal').modal('hide');
+
+            // Optional: Add visual indicator that email was sent
+            const studentRow = document.querySelector(`tr[data-enrollment-id="${enrollmentId}"]`);
+            if (studentRow) {
+                const warningBtn = studentRow.querySelector('.btn-outline-danger');
+                if (warningBtn) {
+                    warningBtn.innerHTML = '📧';
+                    warningBtn.title = 'Warning email sent';
+                    warningBtn.classList.add('btn-success');
+                    warningBtn.classList.remove('btn-outline-danger');
+                }
+            }
+        } else {
+            // Server returned success:false
+            console.error('Server error:', data);
+            alert(`❌ Error: ${data.error || data.message || 'Unknown server error'}`);
+        }
+    })
+    .catch(error => {
+        console.error('=== EMAIL SEND ERROR ===');
+        console.error('Error:', error);
+        console.error('Error message:', error.message);
+
+        // User-friendly error messages
+        let userMessage = 'Failed to send email: ';
+
+        if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+            userMessage += 'Network connection error. Please check your internet.';
+        } else if (error.message.includes('500')) {
+            userMessage += 'Server error. Please check the server logs.';
+        } else if (error.message.includes('419')) {
+            userMessage += 'Session expired. Please refresh the page.';
+        } else if (error.message.includes('403')) {
+            userMessage += 'Permission denied. Please refresh the page.';
+        } else if (error.message.includes('404')) {
+            userMessage += 'Route not found. Please contact the administrator.';
+        } else if (error.message.includes('422')) {
+            userMessage += 'Validation error. Please check your input.';
+        } else {
+            userMessage += error.message;
+        }
+
+        alert(`❌ ${userMessage}`);
+    })
+    .finally(() => {
+        // Restore button state
+        submitBtn.innerHTML = originalBtnText;
+        submitBtn.disabled = false;
+    });
+}
+
+// Form submission handler
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Document loaded - setting up email warning form');
+
+    const emailForm = document.getElementById('emailWarningForm');
+    if (emailForm) {
+        emailForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('Email form submitted via event listener');
+            handleEmailWarning();
+        });
+        console.log('Email form event listener attached');
+    } else {
+        console.error('Email form not found in DOM');
+    }
+
+    // Ensure CSRF token is available
+    let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (!csrfToken) {
+        console.warn('CSRF token not found, adding it...');
+        const metaTag = document.createElement('meta');
+        metaTag.setAttribute('name', 'csrf-token');
+        metaTag.setAttribute('content', '{{ csrf_token() }}');
+        document.getElementsByTagName('head')[0].appendChild(metaTag);
+        console.log('CSRF token added to page');
+    }
+});
+
+// Test function for debugging
+function testEmailConfiguration() {
+    console.log('=== EMAIL CONFIGURATION TEST ===');
+    console.log('CSRF Token:', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ? 'Present' : 'Missing');
+    console.log('Email form:', document.getElementById('emailWarningForm') ? 'Found' : 'Missing');
+    console.log('Current warning student:', currentWarningStudent);
+    console.log('Course ID available:', typeof {{ $course->id ?? 'undefined' }});
+
+    // Test URL construction
+    if (currentWarningStudent && {{ $course->id ?? 'null' }}) {
+        const testUrl = `/lecturer/courses/{{ $course->id ?? 'COURSE_ID' }}/student/${currentWarningStudent.enrollment_id}/send-warning`;
+        console.log('Test URL would be:', testUrl);
+    }
+}
+// Call this when the page loads to verify configuration
+document.addEventListener('DOMContentLoaded', function() {
+    // Add CSRF meta tag if missing
+    if (!document.querySelector('meta[name="csrf-token"]')) {
+        const metaTag = document.createElement('meta');
+        metaTag.setAttribute('name', 'csrf-token');
+        metaTag.setAttribute('content', '{{ csrf_token() ?? "TOKEN_MISSING" }}');
+        document.getElementsByTagName('head')[0].appendChild(metaTag);
+        console.log('Added CSRF meta tag');
+    }
+
+    // Test configuration on page load
+    console.log('Page loaded - testing email configuration...');
+    setTimeout(testEmailConfiguration, 1000);
+});
 
 // Function to take attendance (redirect to attendance page)
 function takeAttendance() {
