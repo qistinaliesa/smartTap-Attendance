@@ -45,19 +45,7 @@
 
           <span></span>
         </li>
-        {{-- <li class="nav-item">
-          <a class="nav-link" data-toggle="collapse" href="#ui-basic" aria-expanded="false" aria-controls="ui-basic">
-            <i class="mdi mdi-palette menu-icon"></i>
-            <span class="menu-title">UI Elements</span>
-            <i class="menu-arrow"></i>
-          </a>
-          <div class="collapse" id="ui-basic">
-            <ul class="nav flex-column sub-menu">
-              <li class="nav-item"> <a class="nav-link" href="{{ route('buttons') }}">Buttons</a></li>
-              <li class="nav-item"> <a class="nav-link" href="{{ route('typography') }}">Typography</a></li>
-            </ul>
-          </div>
-        </li> --}}
+
         <li class="nav-item">
             <a class="nav-link" href="{{ route('lecturer.register') }}">
                 <i class="mdi mdi-view-headline menu-icon"></i>
@@ -76,12 +64,7 @@
                 <span class="menu-title">Course Registration</span>
             </a>
         </li>
-        {{-- <li class="nav-item">
-            <a class="nav-link" href="{{ route('attendance.index') }}">
-                <i class="mdi mdi-view-headline menu-icon"></i>
-                <span class="menu-title">Attendance</span>
-            </a>
-        </li> --}}
+
         <li class="nav-item">
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
@@ -91,45 +74,8 @@
                 </button>
             </form>
         </li>
-        {{-- <li class="nav-item">
-            <a class="nav-link" href="{{ route('chartjs') }}">
-                <i class="mdi mdi-chart-pie menu-icon"></i>
-                <span class="menu-title">Charts</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{{ route('basic.table') }}">
-                <i class="mdi mdi-grid-large menu-icon"></i>
-                <span class="menu-title">Tables</span>
-            </a>
-        </li> --}}
 
-        {{-- <li class="nav-item">
-            <a class="nav-link" href="{{ route('mdi') }}">
-            <i class="mdi mdi-emoticon menu-icon"></i>
-            <span class="menu-title">Icons</span>
-          </a>
-        </li> --}}
-        <li class="nav-item sidebar-category">
-          <p>Pages</p>
-          <span></span>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" data-toggle="collapse" href="#auth" aria-expanded="false" aria-controls="auth">
-            <i class="mdi mdi-account menu-icon"></i>
-            <span class="menu-title">Other</span>
-            <i class="menu-arrow"></i>
-          </a>
-          <div class="collapse" id="auth">
-            <ul class="nav flex-column sub-menu">
-              <li class="nav-item"> <a class="nav-link" href="pages/samples/login.html"> Login </a></li>
-              <li class="nav-item"> <a class="nav-link" href="pages/samples/login-2.html"> Login 2 </a></li>
-              <li class="nav-item"> <a class="nav-link" href="pages/samples/register.html"> Register </a></li>
-              <li class="nav-item"> <a class="nav-link" href="pages/samples/register-2.html"> Register 2 </a></li>
-              <li class="nav-item"> <a class="nav-link" href="pages/samples/lock-screen.html"> Lockscreen </a></li>
-            </ul>
-          </div>
-        </li>
+
 
       </ul>
     </nav>
@@ -140,9 +86,7 @@
 
 
         <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
-          {{-- <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
-            <span class="mdi mdi-menu"></span>
-          </button> --}}
+
           <div class="navbar-brand-wrapper">
             <a class="navbar-brand brand-logo" href="index.html"><img src="{{ asset('images/smarttap.png') }}" alt="logo" style="max-height: 70px;">
                 <h4 class="font-weight-bold mb-0 d-none d-md-block mt-1 text-white">Welcome back, Aisyah</h4>
@@ -152,9 +96,7 @@
           </div>
 
           <ul class="navbar-nav navbar-nav-right">
-            {{-- <li class="nav-item">
-              <h4 class="mb-0 font-weight-bold d-none d-xl-block">Mar 12, 2025 - Apr 10, 2025</h4>
-            </li> --}}
+
             <li class="nav-item dropdown mr-1">
               <a class="nav-link count-indicator dropdown-toggle d-flex justify-content-center align-items-center" id="messageDropdown" href="#" data-toggle="dropdown">
                 <i class="mdi mdi-calendar mx-0"></i>
@@ -263,17 +205,7 @@
           @yield('content')
         </main>
 
-        <footer class="footer mt-auto">
-          <div class="card">
-            <div class="card-body">
-              {{-- <div class="d-sm-flex justify-content-center justify-content-sm-between">
-                <span class="text-muted d-block text-center text-sm-left d-sm-inline-block">Copyright © bootstrapdash.com 2020</span>
-                <span class="text-muted d-block text-center text-sm-left d-sm-inline-block">Distributed By: <a href="https://www.themewagon.com/" target="_blank">ThemeWagon</a></span>
-                <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center"> Free <a href="https://www.bootstrapdash.com/" target="_blank">Bootstrap dashboard templates</a> from Bootstrapdash.com</span>
-              </div> --}}
-            </div>
-          </div>
-        </footer>
+
 
       </div>
 

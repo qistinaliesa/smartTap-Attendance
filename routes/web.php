@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\API\AttendanceController;
 use App\Http\Controllers\API\CardController;
 use App\Http\Controllers\LecturerController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\LecturerCourseController;
 use Illuminate\Support\Facades\Mail;
@@ -57,8 +58,15 @@ Route::middleware('auth')->group(function () {
 
     // Admin-only routes
     Route::middleware('can:isAdmin')->group(function () {
-        Route::get('/admin/home', [AdminController::class, 'home'])->name('admin.home');
+        Route::get('/admin/home', [DashboardController::class, 'index'])->name('admin.home');
         Route::get('/admin', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+
+        // Dashboard AJAX routes
+        Route::get('/admin/dashboard/realtime-data', [DashboardController::class, 'getRealtimeData']);
+        Route::get('/admin/dashboard/course-attendance', [DashboardController::class, 'getCourseAttendance']);
+        Route::get('/admin/dashboard/weekly-attendance', [DashboardController::class, 'getWeeklyAttendance']);
+        Route::get('/admin/dashboard/top-courses', [DashboardController::class, 'getTopCourses']);
+        Route::get('/admin/dashboard/attendance-stats', [DashboardController::class, 'getAttendanceStats']);
 
         // Lecturer management routes
         Route::get('/admin/lecturers', [LecturerController::class, 'index'])->name('admin.lecturer.index');
@@ -77,12 +85,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/courses/{course}/edit', [CourseController::class, 'edit'])->name('admin.course.edit');
         Route::put('/admin/courses/{course}', [CourseController::class, 'update'])->name('admin.course.update');
         Route::delete('/admin/courses/{course}', [CourseController::class, 'destroy'])->name('admin.course.destroy');
-    });
+    }); // Close admin middleware group
 
-    // GET: Show form and list
+    // Lecturer registration routes (for authenticated regular users)
     Route::get('/lecturer-registration', [LecturerController::class, 'showRegistrationForm'])->name('lecturer.register.form');
-
-    // POST: Handle form submission
     Route::post('/lecturer-registration', [LecturerController::class, 'register'])->name('lecturer.register');
 
     // Regular user dashboard
@@ -95,7 +101,7 @@ Route::middleware('auth')->group(function () {
 
     // Logout (updated to handle both guards)
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-});
+}); // Close auth middleware group
 
 // FIXED: Lecturer-only routes (using lecturer guard) with /lecturer prefix
 Route::middleware(['lecturer.auth'])->prefix('lecturer')->group(function () {
@@ -122,10 +128,7 @@ Route::middleware(['lecturer.auth'])->prefix('lecturer')->group(function () {
     Route::get('/courses/{course}/student/{enrollment}/medical-certificates', [LecturerCourseController::class, 'getStudentMedicalCertificates'])->name('lecturer.student.medical_certificates');
     Route::get('/courses/{course}/student/{enrollment}/absent-dates', [LecturerCourseController::class, 'getAbsentDates'])->name('lecturer.student.absent_dates');
     Route::post('/courses/{course}/student/{enrollment}/mark-present', [LecturerCourseController::class, 'markPresentWithReason'])->name('lecturer.student.mark_present');
-    Route::post('/courses/{course}/student/{enrollment}/send-warning',
-    [LecturerCourseController::class, 'sendAttendanceWarning']
-)->name('lecturer.student.send_warning');
-// In routes/web.php
+    Route::post('/courses/{course}/student/{enrollment}/send-warning', [LecturerCourseController::class, 'sendAttendanceWarning'])->name('lecturer.student.send_warning');
 
     // Medical certificate file routes
     Route::get('/courses/{course}/mc/{mc}/download', [LecturerCourseController::class, 'downloadMedicalCertificate'])->name('lecturer.mc.download');
