@@ -52,6 +52,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
 });
+Route::get('/admin/dashboard/course-average-attendance', [App\Http\Controllers\Admin\DashboardController::class, 'getCourseAverageAttendance']);
 
 // Authenticated user routes (regular users and admin)
 Route::middleware('auth')->group(function () {
@@ -62,11 +63,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
         // Dashboard AJAX routes
-        Route::get('/admin/dashboard/realtime-data', [DashboardController::class, 'getRealtimeData']);
-        Route::get('/admin/dashboard/course-attendance', [DashboardController::class, 'getCourseAttendance']);
-        Route::get('/admin/dashboard/weekly-attendance', [DashboardController::class, 'getWeeklyAttendance']);
-        Route::get('/admin/dashboard/top-courses', [DashboardController::class, 'getTopCourses']);
-        Route::get('/admin/dashboard/attendance-stats', [DashboardController::class, 'getAttendanceStats']);
+        Route::get('/admin/dashboard/realtime-data', [DashboardController::class, 'getRealtimeData'])->name('admin.dashboard.realtime');
+        Route::get('/dashboard/course-average-attendance', [DashboardController::class, 'getCourseAverageAttendance']);
+    Route::get('/admin/dashboard/course-attendance', [DashboardController::class, 'getCourseAttendance'])->name('admin.dashboard.course_attendance');
+    Route::get('/admin/dashboard/course-enrollment', [DashboardController::class, 'getCourseEnrollment'])->name('admin.dashboard.course_enrollment'); // NEW ROUTE
+    Route::get('/admin/dashboard/recent-attendance', [DashboardController::class, 'getRecentAttendance'])->name('admin.dashboard.recent_attendance');
+    Route::get('/admin/dashboard/weekly-attendance', [DashboardController::class, 'getWeeklyAttendance'])->name('admin.dashboard.weekly_attendance');
+    Route::get('/admin/dashboard/top-courses', [DashboardController::class, 'getTopCourses'])->name('admin.dashboard.top_courses');
+    Route::get('/admin/dashboard/attendance-stats', [DashboardController::class, 'getAttendanceStats'])->name('admin.dashboard.attendance_stats');
 
         // Lecturer management routes
         Route::get('/admin/lecturers', [LecturerController::class, 'index'])->name('admin.lecturer.index');
