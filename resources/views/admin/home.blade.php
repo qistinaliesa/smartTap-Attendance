@@ -92,24 +92,24 @@
     </div>
 
     <div class="modern-stat-card secondary">
-      <div class="stat-header">
-        <div class="stat-content">
-          <div class="stat-value" id="onTimeCount">0</div>
-          <div class="stat-label">On Time</div>
-          <div class="stat-trend trend-up">
-            <i class="fas fa-check-circle"></i> 8:30-9:00 AM
+        <div class="stat-header">
+          <div class="stat-content">
+            <div class="stat-value" id="activeCourses">0</div>
+            <div class="stat-label">Active Courses</div>
+            <div class="stat-trend trend-up">
+              <i class="fas fa-graduation-cap"></i> Currently Running
+            </div>
+          </div>
+          <div class="stat-icon secondary">
+            <i class="fas fa-graduation-cap"></i>
           </div>
         </div>
-        <div class="stat-icon secondary">
-          <i class="fas fa-check-circle"></i>
-        </div>
       </div>
-    </div>
   </div>
 
   <!-- Charts Section -->
   <div class="dashboard-grid">
-    <!-- Course Enrollment Bar Chart - NEW -->
+    <!-- Course Enrollment Bar Chart -->
     <div class="chart-card enrollment-chart-card">
       <h3 class="card-title">
         <i class="fas fa-chart-bar"></i>
@@ -134,6 +134,7 @@
         <div class="refresh-btn" onclick="refreshCourseData()">
           <i class="fas fa-sync-alt" id="courseRefreshIcon"></i>
         </div>
+
       </h3>
       <div class="course-charts-grid" id="courseChartsGrid">
         @if($attendanceByCourse->isEmpty())
@@ -178,16 +179,6 @@
       </div>
     </div>
 
-    {{-- <!-- Top Performing Courses -->
-    <div class="chart-card">
-      <h3 class="card-title">
-        <i class="fas fa-trophy"></i>
-        Top Performing Courses
-      </h3>
-      <div class="top-courses-list" id="topCoursesList">
-        <!-- Will be populated dynamically -->
-      </div>
-    </div> --}}
 
     <!-- Attendance Heatmap -->
     <div class="chart-card">
@@ -369,6 +360,7 @@
   backdrop-filter: blur(20px);
   box-shadow: 0 8px 32px rgba(0,0,0,0.1);
   transition: all 0.3s ease;
+  border: 1px solid rgba(0,0,0,0.05);
 }
 
 .chart-card:hover {
@@ -376,11 +368,7 @@
   box-shadow: 0 12px 40px rgba(0,0,0,0.15);
 }
 
-/* New styles for enrollment chart */
-/* Updated enrollment chart styles to match other dashboard cards */
-/* Modern colorful bar chart styling to match the design */
 .enrollment-chart-card {
-  grid-column: 1 / -1;
   background: rgba(255,255,255,0.95);
   backdrop-filter: blur(20px);
   box-shadow: 0 8px 32px rgba(0,0,0,0.1);
@@ -414,6 +402,34 @@
   font-size: 20px;
 }
 
+.course-attendance-card {
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  border-radius: 20px;
+  padding: 30px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.course-attendance-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .refresh-btn {
   cursor: pointer;
   padding: 8px;
@@ -444,12 +460,10 @@
   border: 1px solid rgba(0,0,0,0.08);
 }
 
-/* Custom chart styling for modern look */
 .chart-container canvas {
   border-radius: 8px;
 }
 
-/* Enhanced enrollment stats styling */
 .enrollment-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -503,7 +517,6 @@
   font-weight: 600;
 }
 
-/* Loading and error states */
 .enrollment-loading {
   text-align: center;
   padding: 60px 20px;
@@ -529,174 +542,6 @@
   font-size: 48px;
   margin-bottom: 15px;
   opacity: 0.7;
-}
-
-.no-data {
-  text-align: center;
-  color: #6c757d;
-  padding: 60px 20px;
-}
-
-.no-data i {
-  font-size: 48px;
-  margin-bottom: 15px;
-  opacity: 0.4;
-}
-
-/* Responsive adjustments */
-@media (max-width: 1200px) {
-  .enrollment-stats {
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px;
-  }
-
-  .enrollment-stat-number {
-    font-size: 20px;
-  }
-}
-
-@media (max-width: 768px) {
-  .enrollment-chart-card {
-    padding: 20px;
-    margin: 0 -5px;
-  }
-
-  .chart-container {
-    height: 300px;
-    padding: 15px;
-  }
-
-  .enrollment-stats {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-  }
-
-  .enrollment-stat-item {
-    padding: 12px 8px;
-  }
-
-  .enrollment-stat-number {
-    font-size: 18px;
-  }
-
-  .enrollment-stat-label {
-    font-size: 12px;
-  }
-
-  .enrollment-stat-item:last-child {
-    grid-column: 1 / -1;
-  }
-}
-
-/* Spinning animation for refresh button */
-.spinning {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Error state styling */
-.enrollment-error {
-  text-align: center;
-  padding: 40px 20px;
-  color: #e74c3c;
-  background: rgba(231, 76, 60, 0.05);
-  border-radius: 15px;
-  border: 1px solid rgba(231, 76, 60, 0.2);
-}
-
-.enrollment-error i {
-  font-size: 48px;
-  margin-bottom: 15px;
-  opacity: 0.7;
-}
-
-/* Loading state */
-.enrollment-loading {
-  text-align: center;
-  padding: 60px 20px;
-  color: #3498db;
-}
-
-.enrollment-loading i {
-  font-size: 48px;
-  margin-bottom: 15px;
-  animation: spin 2s linear infinite;
-}
-
-/* Responsive adjustments */
-@media (max-width: 1200px) {
-  .enrollment-stats {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 15px;
-  }
-
-  .enrollment-stat-number {
-    font-size: 24px;
-  }
-}
-
-@media (max-width: 768px) {
-  .enrollment-chart-card {
-    padding: 20px;
-    margin: 0 -5px;
-  }
-
-  .chart-container {
-    height: 280px;
-    padding: 15px;
-  }
-
-  .enrollment-stats {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-
-  .enrollment-stat-item {
-    padding: 15px 10px;
-  }
-
-  .enrollment-stat-number {
-    font-size: 20px;
-  }
-
-  .enrollment-stat-label {
-    font-size: 12px;
-  }
-
-  .enrollment-stat-item:last-child {
-    grid-column: 1 / -1;
-  }
-}
-
-.course-attendance-card {
-  grid-column: 1 / -1;
-}
-
-.card-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #2c3e50;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.refresh-btn {
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.refresh-btn:hover {
-  background: rgba(52, 152, 219, 0.1);
-  color: #3498db;
 }
 
 .course-charts-grid {
@@ -762,50 +607,6 @@
 .present-dot { background: #2ECC71; }
 .absent-dot { background: #e74c3c; }
 
-.chart-container {
-  position: relative;
-  height: 300px;
-}
-
-/* Enrollment stats styling */
-.enrollment-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 15px;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(0,0,0,0.1);
-}
-
-.enrollment-stat-item {
-  text-align: center;
-  padding: 15px;
-  background: rgba(255,255,255,0.6);
-  border-radius: 10px;
-  border: 1px solid rgba(52, 152, 219, 0.2);
-  transition: all 0.3s ease;
-}
-
-.enrollment-stat-item:hover {
-  transform: translateY(-2px);
-  background: rgba(52, 152, 219, 0.1);
-  border-color: #3498db;
-}
-
-.enrollment-stat-number {
-  font-size: 24px;
-  font-weight: 700;
-  color: #3498db;
-  display: block;
-}
-
-.enrollment-stat-label {
-  font-size: 12px;
-  color: #7f8c8d;
-  margin-top: 5px;
-  font-weight: 600;
-}
-
 .heatmap-container {
   padding: 20px 0;
 }
@@ -855,7 +656,94 @@
   border-radius: 2px;
 }
 
+.top-courses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
 
+.top-course-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(46, 204, 113, 0.1));
+  border-radius: 12px;
+  border-left: 4px solid #3498db;
+  transition: all 0.3s ease;
+}
+
+.top-course-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.course-rank {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #3498db;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.course-details h5 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 3px;
+}
+
+.course-details p {
+  font-size: 12px;
+  color: #7f8c8d;
+}
+
+.course-percentage {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2ECC71;
+}
+
+.no-data {
+  text-align: center;
+  color: #7f8c8d;
+  padding: 40px 20px;
+}
+
+.no-data i {
+  font-size: 48px;
+  margin-bottom: 15px;
+  opacity: 0.5;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 1200px) {
+  .course-charts-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+
+  .enrollment-stats {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+  }
+
+  .enrollment-stat-number {
+    font-size: 20px;
+  }
+}
 
 @media (max-width: 768px) {
   .stats-grid {
@@ -876,6 +764,19 @@
 
   .enrollment-stats {
     grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .enrollment-stat-item {
+    padding: 12px 8px;
+  }
+
+  .enrollment-stat-number {
+    font-size: 18px;
+  }
+
+  .enrollment-stat-label {
+    font-size: 12px;
   }
 
   .heatmap-grid {
@@ -886,6 +787,11 @@
     width: 25px;
     height: 25px;
     font-size: 10px;
+  }
+
+  .chart-container {
+    height: 300px;
+    padding: 15px;
   }
 }
 </style>
@@ -931,6 +837,30 @@ function updateTime() {
 function initializeEnrollmentChart() {
   console.log('Initializing enrollment chart...');
 
+  const chartContainer = document.querySelector('.enrollment-chart-card .chart-container');
+  const statsContainer = document.getElementById('enrollmentStats');
+
+  // Show loading state
+  if (chartContainer) {
+    chartContainer.innerHTML = `
+      <div class="enrollment-loading">
+        <i class="fas fa-spinner"></i>
+        <p>Loading enrollment data...</p>
+      </div>
+    `;
+  }
+
+  if (statsContainer) {
+    statsContainer.innerHTML = `
+      <div class="enrollment-stat-item" style="grid-column: 1 / -1;">
+        <div class="enrollment-loading">
+          <i class="fas fa-spinner" style="font-size: 24px;"></i>
+          <span>Loading statistics...</span>
+        </div>
+      </div>
+    `;
+  }
+
   // Destroy existing chart
   if (enrollmentChart) {
     enrollmentChart.destroy();
@@ -952,6 +882,11 @@ function initializeEnrollmentChart() {
   .then(data => {
     console.log('Enrollment data received:', data);
 
+    // Restore chart container
+    if (chartContainer) {
+      chartContainer.innerHTML = '<canvas id="enrollmentChart" height="300"></canvas>';
+    }
+
     const ctx = document.getElementById('enrollmentChart');
     if (!ctx) {
       console.error('Enrollment chart canvas not found');
@@ -960,16 +895,40 @@ function initializeEnrollmentChart() {
 
     if (!data || data.length === 0) {
       ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+
+      if (chartContainer) {
+        chartContainer.innerHTML = `
+          <div class="no-data">
+            <i class="fas fa-chart-bar"></i>
+            <p>No enrollment data available</p>
+            <small>Make sure you have courses and enrollments set up</small>
+          </div>
+        `;
+      }
+
+      if (statsContainer) {
+        statsContainer.innerHTML = `
+          <div class="enrollment-stat-item" style="grid-column: 1 / -1;">
+            <span class="enrollment-stat-label">No enrollment data available</span>
+          </div>
+        `;
+      }
       return;
     }
 
     // Sort data by enrollment count (descending)
     const sortedData = data.sort((a, b) => b.enrolled - a.enrolled);
 
-    // Create gradient colors
-    const colors = [
-      '#3498db', '#2ECC71', '#e74c3c', '#f39c12',
-      '#9b59b6', '#1abc9c', '#e67e22', '#34495e'
+    // Enhanced gradient colors
+    const gradientColors = [
+      { bg: 'rgba(52, 152, 219, 0.8)', border: '#3498db' },
+      { bg: 'rgba(46, 204, 113, 0.8)', border: '#2ECC71' },
+      { bg: 'rgba(231, 76, 60, 0.8)', border: '#e74c3c' },
+      { bg: 'rgba(243, 156, 18, 0.8)', border: '#f39c12' },
+      { bg: 'rgba(155, 89, 182, 0.8)', border: '#9b59b6' },
+      { bg: 'rgba(26, 188, 156, 0.8)', border: '#1abc9c' },
+      { bg: 'rgba(230, 126, 34, 0.8)', border: '#e67e22' },
+      { bg: 'rgba(52, 73, 94, 0.8)', border: '#34495e' }
     ];
 
     enrollmentChart = new Chart(ctx.getContext('2d'), {
@@ -979,11 +938,13 @@ function initializeEnrollmentChart() {
         datasets: [{
           label: 'Total Enrollments',
           data: sortedData.map(course => course.enrolled),
-          backgroundColor: sortedData.map((_, index) => colors[index % colors.length] + '80'),
-          borderColor: sortedData.map((_, index) => colors[index % colors.length]),
+          backgroundColor: sortedData.map((_, index) => gradientColors[index % gradientColors.length].bg),
+          borderColor: sortedData.map((_, index) => gradientColors[index % gradientColors.length].border),
           borderWidth: 2,
-          borderRadius: 8,
+          borderRadius: 10,
           borderSkipped: false,
+          hoverBackgroundColor: sortedData.map((_, index) => gradientColors[index % gradientColors.length].border + '90'),
+          hoverBorderWidth: 3,
         }]
       },
       options: {
@@ -998,25 +959,45 @@ function initializeEnrollmentChart() {
                 size: 14,
                 weight: '600'
               },
-              color: '#2c3e50'
+              color: '#2c3e50',
+              usePointStyle: true,
+              pointStyle: 'rectRounded'
             }
           },
           tooltip: {
-            backgroundColor: 'rgba(44, 62, 80, 0.9)',
+            backgroundColor: 'rgba(44, 62, 80, 0.95)',
             titleColor: '#ffffff',
             bodyColor: '#ffffff',
             borderColor: '#3498db',
-            borderWidth: 1,
-            cornerRadius: 8,
+            borderWidth: 2,
+            cornerRadius: 12,
+            displayColors: true,
+            titleFont: {
+              size: 16,
+              weight: '600'
+            },
+            bodyFont: {
+              size: 14,
+              weight: '400'
+            },
+            padding: 15,
             callbacks: {
+              title: function(context) {
+                const course = sortedData[context[0].dataIndex];
+                return course.title || course.course_code;
+              },
               label: function(context) {
                 const course = sortedData[context.dataIndex];
                 return [
                   `Enrollments: ${context.parsed.y}`,
-                  `Course: ${course.title || course.course_code}`,
                   `Present Today: ${course.total || 0}`,
                   `Attendance Rate: ${course.attendance_percentage || 0}%`
                 ];
+              },
+              afterLabel: function(context) {
+                const course = sortedData[context.dataIndex];
+                const rank = context.dataIndex + 1;
+                return `Rank: #${rank}`;
               }
             }
           }
@@ -1025,15 +1006,17 @@ function initializeEnrollmentChart() {
           y: {
             beginAtZero: true,
             grid: {
-              color: 'rgba(0,0,0,0.05)',
-              drawBorder: false
+              color: 'rgba(0,0,0,0.08)',
+              drawBorder: false,
+              lineWidth: 1
             },
             ticks: {
               color: '#7f8c8d',
               font: {
                 size: 12,
                 weight: '500'
-              }
+              },
+              padding: 10
             },
             title: {
               display: true,
@@ -1042,7 +1025,8 @@ function initializeEnrollmentChart() {
               font: {
                 size: 14,
                 weight: '600'
-              }
+              },
+              padding: 20
             }
           },
           x: {
@@ -1055,7 +1039,8 @@ function initializeEnrollmentChart() {
                 size: 12,
                 weight: '500'
               },
-              maxRotation: 45
+              maxRotation: 45,
+              padding: 10
             },
             title: {
               display: true,
@@ -1064,34 +1049,59 @@ function initializeEnrollmentChart() {
               font: {
                 size: 14,
                 weight: '600'
-              }
+              },
+              padding: 20
             }
           }
         },
         animation: {
-          duration: 1500,
+          duration: 2000,
           easing: 'easeOutBounce'
+        },
+        interaction: {
+          intersect: false,
+          mode: 'index'
         }
       }
     });
 
-    // Update enrollment stats
+    // Update enrollment stats with enhanced styling
     updateEnrollmentStats(sortedData);
 
     console.log('Enrollment chart created successfully');
   })
   .catch(error => {
     console.error('Error loading enrollment data:', error);
-    document.getElementById('enrollmentStats').innerHTML = `
-      <div class="enrollment-stat-item" style="grid-column: 1 / -1; color: #e74c3c;">
-        <i class="fas fa-exclamation-triangle"></i>
-        <span>Error loading enrollment data</span>
-      </div>
-    `;
+
+    // Show error state in chart container
+    if (chartContainer) {
+      chartContainer.innerHTML = `
+        <div class="enrollment-error">
+          <i class="fas fa-exclamation-triangle"></i>
+          <p><strong>Error loading enrollment data</strong></p>
+          <small>Please check your network connection and try again</small>
+          <button onclick="initializeEnrollmentChart()"
+                  style="margin-top: 15px; padding: 8px 16px; border: none; border-radius: 8px;
+                         background: #e74c3c; color: white; cursor: pointer; font-weight: 600;">
+            Retry
+          </button>
+        </div>
+      `;
+    }
+
+    // Show error state in stats
+    if (statsContainer) {
+      statsContainer.innerHTML = `
+        <div class="enrollment-stat-item enrollment-error" style="grid-column: 1 / -1;">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Error loading enrollment statistics</span>
+        </div>
+      `;
+    }
   });
 }
 
-// Update enrollment statistics
+// Enhanced enrollment statistics update function
 function updateEnrollmentStats(data) {
   const statsContainer = document.getElementById('enrollmentStats');
   if (!statsContainer || !data || data.length === 0) return;
@@ -1103,27 +1113,49 @@ function updateEnrollmentStats(data) {
   const mostPopularCourse = data.find(course => course.enrolled === maxEnrollment);
 
   statsContainer.innerHTML = `
+
     <div class="enrollment-stat-item">
-      <span class="enrollment-stat-number">${totalEnrollments}</span>
-      <span class="enrollment-stat-label">Total Enrollments</span>
-    </div>
-    <div class="enrollment-stat-item">
-      <span class="enrollment-stat-number">${avgEnrollment}</span>
-      <span class="enrollment-stat-label">Average per Course</span>
-    </div>
-    <div class="enrollment-stat-item">
-      <span class="enrollment-stat-number">${maxEnrollment}</span>
-      <span class="enrollment-stat-label">Highest Enrollment</span>
-    </div>
-    <div class="enrollment-stat-item">
-      <span class="enrollment-stat-number">${data.length}</span>
-      <span class="enrollment-stat-label">Active Courses</span>
-    </div>
-    <div class="enrollment-stat-item" style="grid-column: 1 / -1;">
-      <span class="enrollment-stat-label">Most Popular: ${mostPopularCourse?.course_code} (${maxEnrollment} students)</span>
+      <span class="enrollment-stat-label">
+        Most Popular: <strong>${mostPopularCourse?.course_code}</strong>
+        (${maxEnrollment.toLocaleString()} students)
+      </span>
     </div>
   `;
 }
+function updateActiveCourses(courseData = null) {
+  const activeCoursesElement = document.getElementById('activeCourses');
+  if (!activeCoursesElement) return;
+
+  // If course data is provided, use it directly
+  if (courseData && Array.isArray(courseData)) {
+    activeCoursesElement.textContent = courseData.length;
+    return;
+  }
+
+  // Otherwise, try to get from existing enrollment chart
+  if (enrollmentChart && enrollmentChart.data && enrollmentChart.data.labels) {
+    activeCoursesElement.textContent = enrollmentChart.data.labels.length;
+    return;
+  }
+
+  // Fallback: fetch from the same endpoint as enrollment chart
+  fetch('/admin/dashboard/course-enrollment', {
+    headers: {
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    const courseCount = Array.isArray(data) ? data.length : 0;
+    activeCoursesElement.textContent = courseCount;
+  })
+  .catch(error => {
+    console.error('Error fetching active courses:', error);
+    activeCoursesElement.textContent = 0;
+  });
+}
+
 
 // Initialize course pie charts
 function initializeCourseCharts() {
@@ -1408,7 +1440,7 @@ function initializeTopCourses() {
 }
 
 // Refresh functions
-function refreshDashboardData() {
+function refreshDashboardDataUpdated() {
   fetch('/admin/dashboard/realtime-data', {
     headers: {
       'Accept': 'application/json',
@@ -1422,7 +1454,8 @@ function refreshDashboardData() {
       presentToday: document.getElementById('presentToday'),
       absentToday: document.getElementById('absentToday'),
       presentPercentage: document.getElementById('presentPercentage'),
-      absentPercentage: document.getElementById('absentPercentage')
+      absentPercentage: document.getElementById('absentPercentage'),
+      activeCourses: document.getElementById('activeCourses') // Add this line
     };
 
     if (elements.totalStudents) elements.totalStudents.textContent = data.totalStudents;
@@ -1431,21 +1464,29 @@ function refreshDashboardData() {
     if (elements.presentPercentage) elements.presentPercentage.textContent = data.presentPercentage + '%';
     if (elements.absentPercentage) elements.absentPercentage.textContent = data.absentPercentage + '%';
 
-    // Update time-based stats
+    // Update active courses count
+    if (elements.activeCourses) {
+      elements.activeCourses.textContent = data.activeCourses || 0;
+    }
+
+    // Update time-based stats (keep existing late and early counts)
     if (data.timeBasedStats) {
       const timeElements = {
         lateCount: document.getElementById('lateCount'),
-        earlyCount: document.getElementById('earlyCount'),
-        onTimeCount: document.getElementById('onTimeCount')
+        earlyCount: document.getElementById('earlyCount')
       };
 
       if (timeElements.lateCount) timeElements.lateCount.textContent = data.timeBasedStats.late;
       if (timeElements.earlyCount) timeElements.earlyCount.textContent = data.timeBasedStats.early;
-      if (timeElements.onTimeCount) timeElements.onTimeCount.textContent = data.timeBasedStats.onTime;
     }
   })
   .catch(error => console.error('Error refreshing data:', error));
 }
+
+// Initialize active courses count on page load
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(updateActiveCourses, 500);
+});
 
 function refreshCourseData() {
   const refreshIcon = document.getElementById('courseRefreshIcon');
@@ -1459,15 +1500,31 @@ function refreshCourseData() {
   }, 2000);
 }
 
+// Enhanced refresh function with better UX
 function refreshEnrollmentChart() {
   const refreshIcon = document.getElementById('enrollmentRefreshIcon');
-  if (refreshIcon) refreshIcon.classList.add('spinning');
+  const refreshBtn = refreshIcon?.parentElement;
+
+  if (refreshIcon) {
+    refreshIcon.classList.add('spinning');
+  }
+
+  if (refreshBtn) {
+    refreshBtn.style.pointerEvents = 'none';
+    refreshBtn.style.opacity = '0.7';
+  }
 
   initializeEnrollmentChart();
 
   setTimeout(() => {
-    if (refreshIcon) refreshIcon.classList.remove('spinning');
-  }, 2000);
+    if (refreshIcon) {
+      refreshIcon.classList.remove('spinning');
+    }
+    if (refreshBtn) {
+      refreshBtn.style.pointerEvents = 'auto';
+      refreshBtn.style.opacity = '1';
+    }
+  }, 2500);
 }
 
 // Initialize everything when DOM is ready
@@ -1536,337 +1593,6 @@ function initializeInitialCourseCharts() {
     }
   });
 }
-// Enhanced enrollment chart initialization with better loading states
-function initializeEnrollmentChart() {
-  console.log('Initializing enrollment chart...');
-
-  const chartContainer = document.querySelector('.chart-container');
-  const statsContainer = document.getElementById('enrollmentStats');
-
-  // Show loading state
-  if (chartContainer) {
-    chartContainer.innerHTML = `
-      <div class="enrollment-loading">
-        <i class="fas fa-spinner"></i>
-        <p>Loading enrollment data...</p>
-      </div>
-    `;
-  }
-
-  if (statsContainer) {
-    statsContainer.innerHTML = `
-      <div class="enrollment-stat-item" style="grid-column: 1 / -1;">
-        <div class="enrollment-loading">
-          <i class="fas fa-spinner" style="font-size: 24px;"></i>
-          <span>Loading statistics...</span>
-        </div>
-      </div>
-    `;
-  }
-
-  // Destroy existing chart
-  if (enrollmentChart) {
-    enrollmentChart.destroy();
-    enrollmentChart = null;
-  }
-
-  fetch('/admin/dashboard/course-enrollment', {
-    headers: {
-      'Accept': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest'
-    }
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.json();
-  })
-  .then(data => {
-    console.log('Enrollment data received:', data);
-
-    // Restore chart container
-    if (chartContainer) {
-      chartContainer.innerHTML = '<canvas id="enrollmentChart" height="300"></canvas>';
-    }
-
-    const ctx = document.getElementById('enrollmentChart');
-    if (!ctx) {
-      console.error('Enrollment chart canvas not found');
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
-
-      if (chartContainer) {
-        chartContainer.innerHTML = `
-          <div class="no-data">
-            <i class="fas fa-chart-bar"></i>
-            <p>No enrollment data available</p>
-            <small>Make sure you have courses and enrollments set up</small>
-          </div>
-        `;
-      }
-
-      if (statsContainer) {
-        statsContainer.innerHTML = `
-          <div class="enrollment-stat-item" style="grid-column: 1 / -1;">
-            <span class="enrollment-stat-label">No enrollment data available</span>
-          </div>
-        `;
-      }
-      return;
-    }
-
-    // Sort data by enrollment count (descending)
-    const sortedData = data.sort((a, b) => b.enrolled - a.enrolled);
-
-    // Enhanced gradient colors
-    const gradientColors = [
-      { bg: 'rgba(52, 152, 219, 0.8)', border: '#3498db' },
-      { bg: 'rgba(46, 204, 113, 0.8)', border: '#2ECC71' },
-      { bg: 'rgba(231, 76, 60, 0.8)', border: '#e74c3c' },
-      { bg: 'rgba(243, 156, 18, 0.8)', border: '#f39c12' },
-      { bg: 'rgba(155, 89, 182, 0.8)', border: '#9b59b6' },
-      { bg: 'rgba(26, 188, 156, 0.8)', border: '#1abc9c' },
-      { bg: 'rgba(230, 126, 34, 0.8)', border: '#e67e22' },
-      { bg: 'rgba(52, 73, 94, 0.8)', border: '#34495e' }
-    ];
-
-    enrollmentChart = new Chart(ctx.getContext('2d'), {
-      type: 'bar',
-      data: {
-        labels: sortedData.map(course => course.course_code),
-        datasets: [{
-          label: 'Total Enrollments',
-          data: sortedData.map(course => course.enrolled),
-          backgroundColor: sortedData.map((_, index) => gradientColors[index % gradientColors.length].bg),
-          borderColor: sortedData.map((_, index) => gradientColors[index % gradientColors.length].border),
-          borderWidth: 2,
-          borderRadius: 10,
-          borderSkipped: false,
-          hoverBackgroundColor: sortedData.map((_, index) => gradientColors[index % gradientColors.length].border + '90'),
-          hoverBorderWidth: 3,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: true,
-            position: 'top',
-            labels: {
-              font: {
-                size: 14,
-                weight: '600'
-              },
-              color: '#2c3e50',
-              usePointStyle: true,
-              pointStyle: 'rectRounded'
-            }
-          },
-          tooltip: {
-            backgroundColor: 'rgba(44, 62, 80, 0.95)',
-            titleColor: '#ffffff',
-            bodyColor: '#ffffff',
-            borderColor: '#3498db',
-            borderWidth: 2,
-            cornerRadius: 12,
-            displayColors: true,
-            titleFont: {
-              size: 16,
-              weight: '600'
-            },
-            bodyFont: {
-              size: 14,
-              weight: '400'
-            },
-            padding: 15,
-            callbacks: {
-              title: function(context) {
-                const course = sortedData[context[0].dataIndex];
-                return course.title || course.course_code;
-              },
-              label: function(context) {
-                const course = sortedData[context.dataIndex];
-                return [
-                  `ðŸ“Š Enrollments: ${context.parsed.y}`,
-                  `âœ… Present Today: ${course.total || 0}`,
-                  `ðŸ“ˆ Attendance Rate: ${course.attendance_percentage || 0}%`
-                ];
-              },
-              afterLabel: function(context) {
-                const course = sortedData[context.dataIndex];
-                const rank = context.dataIndex + 1;
-                return `ðŸ† Rank: #${rank}`;
-              }
-            }
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: 'rgba(0,0,0,0.08)',
-              drawBorder: false,
-              lineWidth: 1
-            },
-            ticks: {
-              color: '#7f8c8d',
-              font: {
-                size: 12,
-                weight: '500'
-              },
-              padding: 10
-            },
-            title: {
-              display: true,
-              text: 'ðŸ‘¥ Number of Students',
-              color: '#2c3e50',
-              font: {
-                size: 14,
-                weight: '600'
-              },
-              padding: 20
-            }
-          },
-          x: {
-            grid: {
-              display: false
-            },
-            ticks: {
-              color: '#7f8c8d',
-              font: {
-                size: 12,
-                weight: '500'
-              },
-              maxRotation: 45,
-              padding: 10
-            },
-            title: {
-              display: true,
-              text: 'ðŸ“š Courses',
-              color: '#2c3e50',
-              font: {
-                size: 14,
-                weight: '600'
-              },
-              padding: 20
-            }
-          }
-        },
-        animation: {
-          duration: 2000,
-          easing: 'easeOutBounce'
-        },
-        interaction: {
-          intersect: false,
-          mode: 'index'
-        }
-      }
-    });
-
-    // Update enrollment stats with enhanced styling
-    updateEnrollmentStats(sortedData);
-
-    console.log('Enrollment chart created successfully');
-  })
-  .catch(error => {
-    console.error('Error loading enrollment data:', error);
-
-    // Show error state in chart container
-    if (chartContainer) {
-      chartContainer.innerHTML = `
-        <div class="enrollment-error">
-          <i class="fas fa-exclamation-triangle"></i>
-          <p><strong>Error loading enrollment data</strong></p>
-          <small>Please check your network connection and try again</small>
-          <button onclick="initializeEnrollmentChart()"
-                  style="margin-top: 15px; padding: 8px 16px; border: none; border-radius: 8px;
-                         background: #e74c3c; color: white; cursor: pointer; font-weight: 600;">
-            ðŸ”„ Retry
-          </button>
-        </div>
-      `;
-    }
-
-    // Show error state in stats
-    if (statsContainer) {
-      statsContainer.innerHTML = `
-        <div class="enrollment-stat-item enrollment-error" style="grid-column: 1 / -1;">
-          <i class="fas fa-exclamation-triangle"></i>
-          <span>Error loading enrollment statistics</span>
-        </div>
-      `;
-    }
-  });
-}
-
-// Enhanced enrollment statistics update function
-function updateEnrollmentStats(data) {
-  const statsContainer = document.getElementById('enrollmentStats');
-  if (!statsContainer || !data || data.length === 0) return;
-
-  const totalEnrollments = data.reduce((sum, course) => sum + course.enrolled, 0);
-  const avgEnrollment = Math.round(totalEnrollments / data.length);
-  const maxEnrollment = Math.max(...data.map(course => course.enrolled));
-  const minEnrollment = Math.min(...data.map(course => course.enrolled));
-  const mostPopularCourse = data.find(course => course.enrolled === maxEnrollment);
-
-  statsContainer.innerHTML = `
-    <div class="enrollment-stat-item">
-      <span class="enrollment-stat-number">${totalEnrollments.toLocaleString()}</span>
-      <span class="enrollment-stat-label">Total Enrollments</span>
-    </div>
-    <div class="enrollment-stat-item">
-      <span class="enrollment-stat-number">${avgEnrollment}</span>
-      <span class="enrollment-stat-label">Average per Course</span>
-    </div>
-    <div class="enrollment-stat-item">
-      <span class="enrollment-stat-number">${maxEnrollment}</span>
-      <span class="enrollment-stat-label">Highest Enrollment</span>
-    </div>
-    <div class="enrollment-stat-item">
-      <span class="enrollment-stat-number">${data.length}</span>
-      <span class="enrollment-stat-label">Active Courses</span>
-    </div>
-    <div class="enrollment-stat-item">
-      <span class="enrollment-stat-label">
-        ðŸ† Most Popular: <strong>${mostPopularCourse?.course_code}</strong>
-        (${maxEnrollment.toLocaleString()} students)
-      </span>
-    </div>
-  `;
-}
-
-// Enhanced refresh function with better UX
-function refreshEnrollmentChart() {
-  const refreshIcon = document.getElementById('enrollmentRefreshIcon');
-  const refreshBtn = refreshIcon?.parentElement;
-
-  if (refreshIcon) {
-    refreshIcon.classList.add('spinning');
-  }
-
-  if (refreshBtn) {
-    refreshBtn.style.pointerEvents = 'none';
-    refreshBtn.style.opacity = '0.7';
-  }
-
-  initializeEnrollmentChart();
-
-  setTimeout(() => {
-    if (refreshIcon) {
-      refreshIcon.classList.remove('spinning');
-    }
-    if (refreshBtn) {
-      refreshBtn.style.pointerEvents = 'auto';
-      refreshBtn.style.opacity = '1';
-    }
-  }, 2500);
-}
 
 // Initialize initial charts if data exists
 if (@json($attendanceByCourse).length > 0) {
@@ -1877,12 +1603,6 @@ if (@json($attendanceByCourse).length > 0) {
 </script>
 
 @endsection
-
-
-
-
-
-
 
 
 
