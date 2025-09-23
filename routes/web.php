@@ -47,12 +47,29 @@ Route::get('/', function () {
     return redirect('/login');
 })->name('users.home');
 
+
 // Guest routes (unauthenticated users)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
 });
 Route::get('/admin/dashboard/course-average-attendance', [App\Http\Controllers\Admin\DashboardController::class, 'getCourseAverageAttendance']);
+Route::middleware(['auth:admin'])->prefix('admin')->group(function() {
+    // Dashboard routes
+    Route::get('/dashboard', [App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('admin.dashboard');
+
+    // AJAX endpoints for dashboard data
+    Route::get('/dashboard/realtime-data', [App\Http\Controllers\Admin\DashboardController::class, 'getRealtimeData']);
+    Route::get('/dashboard/course-attendance', [App\Http\Controllers\Admin\DashboardController::class, 'getCourseAttendance']);
+    Route::get('/dashboard/course-enrollment', [App\Http\Controllers\Admin\DashboardController::class, 'getCourseEnrollment']);
+    Route::get('/dashboard/weekly-attendance', [App\Http\Controllers\Admin\DashboardController::class, 'getWeeklyAttendance']);
+    Route::get('/dashboard/attendance-stats', [App\Http\Controllers\Admin\DashboardController::class, 'getAttendanceStats']);
+    Route::get('/dashboard/top-courses', [App\Http\Controllers\Admin\DashboardController::class, 'getTopCourses']);
+});
+Route::get('/test-course-attendance', function() {
+    $controller = new App\Http\Controllers\Admin\DashboardController();
+    return $controller->getCourseAttendance();
+})->middleware(['auth:admin']);
 
 // Authenticated user routes (regular users and admin)
 Route::middleware('auth')->group(function () {

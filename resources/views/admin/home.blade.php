@@ -918,6 +918,12 @@ function initializeEnrollmentChart() {
 
     // Sort data by enrollment count (descending)
     const sortedData = data.sort((a, b) => b.enrolled - a.enrolled);
+    const maxEnrollment = Math.max(...sortedData.map(course => course.enrolled));
+      const minEnrollment = Math.min(...sortedData.map(course => course.enrolled));
+
+// If all values are the same or the range is too small, we'll adjust the chart scale differently
+const needsScaleFix = (maxEnrollment - minEnrollment) <= 1;
+
 
     // Enhanced gradient colors
     const gradientColors = [
@@ -932,138 +938,158 @@ function initializeEnrollmentChart() {
     ];
 
     enrollmentChart = new Chart(ctx.getContext('2d'), {
-      type: 'bar',
-      data: {
-        labels: sortedData.map(course => course.course_code),
-        datasets: [{
-          label: 'Total Enrollments',
-          data: sortedData.map(course => course.enrolled),
-          backgroundColor: sortedData.map((_, index) => gradientColors[index % gradientColors.length].bg),
-          borderColor: sortedData.map((_, index) => gradientColors[index % gradientColors.length].border),
-          borderWidth: 2,
-          borderRadius: 10,
-          borderSkipped: false,
-          hoverBackgroundColor: sortedData.map((_, index) => gradientColors[index % gradientColors.length].border + '90'),
-          hoverBorderWidth: 3,
-        }]
+  type: 'bar',
+  data: {
+    labels: sortedData.map(course => course.course_code),
+    datasets: [{
+      label: 'Total Enrollments',
+      data: sortedData.map(course => course.enrolled),
+      backgroundColor: sortedData.map((_, index) => gradientColors[index % gradientColors.length].bg),
+      borderColor: sortedData.map((_, index) => gradientColors[index % gradientColors.length].border),
+      borderWidth: 2,
+      borderRadius: 10,
+      borderSkipped: false,
+      hoverBackgroundColor: sortedData.map((_, index) => gradientColors[index % gradientColors.length].border + '90'),
+      hoverBorderWidth: 3,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        labels: {
+          font: {
+            size: 14,
+            weight: '600'
+          },
+          color: '#2c3e50',
+          usePointStyle: true,
+          pointStyle: 'rectRounded'
+        }
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: true,
-            position: 'top',
-            labels: {
-              font: {
-                size: 14,
-                weight: '600'
-              },
-              color: '#2c3e50',
-              usePointStyle: true,
-              pointStyle: 'rectRounded'
-            }
+      tooltip: {
+        backgroundColor: 'rgba(44, 62, 80, 0.95)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderColor: '#3498db',
+        borderWidth: 2,
+        cornerRadius: 12,
+        displayColors: true,
+        titleFont: {
+          size: 16,
+          weight: '600'
+        },
+        bodyFont: {
+          size: 14,
+          weight: '400'
+        },
+        padding: 15,
+        callbacks: {
+          title: function(context) {
+            const course = sortedData[context[0].dataIndex];
+            return course.title || course.course_code;
           },
-          tooltip: {
-            backgroundColor: 'rgba(44, 62, 80, 0.95)',
-            titleColor: '#ffffff',
-            bodyColor: '#ffffff',
-            borderColor: '#3498db',
-            borderWidth: 2,
-            cornerRadius: 12,
-            displayColors: true,
-            titleFont: {
-              size: 16,
-              weight: '600'
-            },
-            bodyFont: {
-              size: 14,
-              weight: '400'
-            },
-            padding: 15,
-            callbacks: {
-              title: function(context) {
-                const course = sortedData[context[0].dataIndex];
-                return course.title || course.course_code;
-              },
-              label: function(context) {
-                const course = sortedData[context.dataIndex];
-                return [
-                  `Enrollments: ${context.parsed.y}`,
-                  `Present Today: ${course.total || 0}`,
-                  `Attendance Rate: ${course.attendance_percentage || 0}%`
-                ];
-              },
-              afterLabel: function(context) {
-                const course = sortedData[context.dataIndex];
-                const rank = context.dataIndex + 1;
-                return `Rank: #${rank}`;
-              }
-            }
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: 'rgba(0,0,0,0.08)',
-              drawBorder: false,
-              lineWidth: 1
-            },
-            ticks: {
-              color: '#7f8c8d',
-              font: {
-                size: 12,
-                weight: '500'
-              },
-              padding: 10
-            },
-            title: {
-              display: true,
-              text: 'Number of Students',
-              color: '#2c3e50',
-              font: {
-                size: 14,
-                weight: '600'
-              },
-              padding: 20
-            }
+          label: function(context) {
+            const course = sortedData[context.dataIndex];
+            return [
+              `Enrollments: ${context.parsed.y}`,
+              `Present Today: ${course.total || 0}`,
+              `Attendance Rate: ${course.attendance_percentage || 0}%`
+            ];
           },
-          x: {
-            grid: {
-              display: false
-            },
-            ticks: {
-              color: '#7f8c8d',
-              font: {
-                size: 12,
-                weight: '500'
-              },
-              maxRotation: 45,
-              padding: 10
-            },
-            title: {
-              display: true,
-              text: 'Courses',
-              color: '#2c3e50',
-              font: {
-                size: 14,
-                weight: '600'
-              },
-              padding: 20
-            }
+          afterLabel: function(context) {
+            const course = sortedData[context.dataIndex];
+            const rank = context.dataIndex + 1;
+            return `Rank: #${rank}`;
           }
-        },
-        animation: {
-          duration: 2000,
-          easing: 'easeOutBounce'
-        },
-        interaction: {
-          intersect: false,
-          mode: 'index'
         }
       }
-    });
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        // FIX 1: Set explicit min/max values to prevent auto-scaling issues
+        min: 0,
+        max: Math.max(...sortedData.map(course => course.enrolled)) + 0,
+
+        // FIX 2: Add grace percentage for padding
+        grace: '15%',
+        grid: {
+          color: 'rgba(0,0,0,0.08)',
+          drawBorder: false,
+          lineWidth: 1
+        },
+        ticks: {
+          color: '#7f8c8d',
+          font: {
+            size: 12,
+            weight: '500'
+          },
+          padding: 10,
+          // FIX 3: Force integer steps for small values
+          stepSize: 1,
+          callback: function(value) {
+            return Math.floor(value) === value ? value : '';
+          }
+        },
+        title: {
+          display: true,
+          text: 'Number of Students',
+          color: '#2c3e50',
+          font: {
+            size: 14,
+            weight: '600'
+          },
+          padding: 20
+        }
+
+      },
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          color: '#7f8c8d',
+          font: {
+            size: 12,
+            weight: '500'
+          },
+          maxRotation: 45,
+          padding: 10
+        },
+        title: {
+          display: true,
+          text: 'Courses',
+          color: '#2c3e50',
+          font: {
+            size: 14,
+            weight: '600'
+          },
+          padding: 20
+        }
+      }
+    },
+    animation: {
+      duration: 2000,
+      easing: 'easeOutBounce'
+    },
+    interaction: {
+      intersect: false,
+      mode: 'index'
+    }
+  }
+});
+
+// FIX 4: Add this debug logging after chart creation
+console.log('Chart data for debugging:', {
+  labels: sortedData.map(course => course.course_code),
+  data: sortedData.map(course => course.enrolled),
+  maxValue: Math.max(...sortedData.map(course => course.enrolled)),
+  chartConfig: enrollmentChart.config
+});
 
     // Update enrollment stats with enhanced styling
     updateEnrollmentStats(sortedData);
@@ -1167,6 +1193,20 @@ function initializeCourseCharts() {
   });
   courseCharts = [];
 
+  const container = document.getElementById('courseChartsGrid');
+  if (!container) {
+    console.error('Course charts container not found');
+    return;
+  }
+
+  // Show loading state
+  container.innerHTML = `
+    <div class="no-data" style="grid-column: 1 / -1;">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Loading course attendance data...</p>
+    </div>
+  `;
+
   // Fetch real-time course data
   fetch('/admin/dashboard/course-attendance', {
     headers: {
@@ -1175,46 +1215,51 @@ function initializeCourseCharts() {
     }
   })
   .then(response => {
-    console.log('Response status:', response.status);
+    console.log('Course attendance response status:', response.status);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     return response.json();
   })
   .then(courseData => {
-    console.log('Course data received:', courseData);
-    const container = document.getElementById('courseChartsGrid');
-    if (!container) return;
+    console.log('Course attendance data received:', courseData);
 
+    // Clear loading state
     container.innerHTML = '';
 
     if (!courseData || courseData.length === 0) {
       container.innerHTML = `
-        <div class="no-data">
+        <div class="no-data" style="grid-column: 1 / -1;">
           <i class="fas fa-chart-pie"></i>
           <p>No course attendance data available</p>
-          <small>Make sure you have courses and enrollments set up</small>
+          <small>Make sure you have courses with enrolled students</small>
         </div>
       `;
       return;
     }
 
+    // Update active courses count using this data
+    updateActiveCourses(courseData);
+
+    // Create charts for each course
     courseData.forEach((course, index) => {
       console.log(`Creating chart for course: ${course.course_code}`, course);
 
       const courseDiv = document.createElement('div');
       courseDiv.className = 'course-pie-chart';
 
-      const enrolledCount = course.enrolled || (course.total + Math.max(1, Math.floor(course.total * 0.2)));
-      const presentCount = course.total || 0;
+      const enrolledCount = parseInt(course.enrolled) || 0;
+      const presentCount = parseInt(course.total) || 0;
       const absentCount = Math.max(0, enrolledCount - presentCount);
-      const attendancePercentage = enrolledCount > 0 ?
-        Math.round((presentCount / enrolledCount) * 100) : 0;
+      const attendancePercentage = course.attendance_percentage || 0;
+
+      // FIXED: Use the actual percentage from backend instead of recalculating
+      const displayPercentage = attendancePercentage;
 
       courseDiv.innerHTML = `
         <div class="course-header">
           <h4>${course.course_code}</h4>
-          <span class="course-total">${presentCount}/${enrolledCount} students (${attendancePercentage}%)</span>
+          <span class="course-total">${presentCount}/${enrolledCount} students (${displayPercentage}%)</span>
         </div>
         <div class="pie-chart-container">
           <canvas id="courseChart${index}" width="150" height="150"></canvas>
@@ -1230,9 +1275,10 @@ function initializeCourseCharts() {
           </div>
         </div>
       `;
+
       container.appendChild(courseDiv);
 
-      // Create the chart
+      // Create the chart with a small delay to ensure DOM is ready
       setTimeout(() => {
         const ctx = document.getElementById(`courseChart${index}`);
         if (!ctx) {
@@ -1249,7 +1295,9 @@ function initializeCourseCharts() {
                 data: [presentCount, absentCount],
                 backgroundColor: ['#2ECC71', '#e74c3c'],
                 borderWidth: 2,
-                borderColor: '#ffffff'
+                borderColor: '#ffffff',
+                hoverBackgroundColor: ['#27AE60', '#c0392b'],
+                hoverBorderWidth: 3
               }]
             },
             options: {
@@ -1260,13 +1308,26 @@ function initializeCourseCharts() {
                   display: false
                 },
                 tooltip: {
+                  backgroundColor: 'rgba(44, 62, 80, 0.95)',
+                  titleColor: '#ffffff',
+                  bodyColor: '#ffffff',
+                  borderColor: '#3498db',
+                  borderWidth: 2,
+                  cornerRadius: 8,
+                  displayColors: true,
                   callbacks: {
+                    title: function(context) {
+                      return course.course_code;
+                    },
                     label: function(context) {
                       const label = context.label || '';
                       const value = context.parsed;
-                      const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                      const total = enrolledCount;
                       const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                      return `${label}: ${value} (${percentage}%)`;
+                      return `${label}: ${value} students (${percentage}%)`;
+                    },
+                    afterBody: function(context) {
+                      return [`Total Enrolled: ${enrolledCount}`, `Attendance Rate: ${displayPercentage}%`];
                     }
                   }
                 }
@@ -1274,34 +1335,52 @@ function initializeCourseCharts() {
               cutout: '60%',
               animation: {
                 animateRotate: true,
-                animateScale: false
+                animateScale: false,
+                duration: 1000
               }
             }
           });
 
           courseCharts.push(chart);
           console.log(`Chart created successfully for ${course.course_code}`);
+
         } catch (error) {
           console.error(`Error creating chart for ${course.course_code}:`, error);
+
+          // Show error in the chart container
+          const chartContainer = document.getElementById(`courseChart${index}`);
+          if (chartContainer) {
+            chartContainer.parentElement.innerHTML = `
+              <div class="chart-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                <small>Error loading chart</small>
+              </div>
+            `;
+          }
         }
-      }, 100 * index);
+      }, 100 * index); // Stagger chart creation
     });
+
+    console.log(`Created ${courseData.length} course charts successfully`);
   })
   .catch(error => {
-    console.error('Error loading course data:', error);
-    const container = document.getElementById('courseChartsGrid');
-    if (container) {
-      container.innerHTML = `
-        <div class="no-data">
-          <i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i>
-          <p>Error loading course attendance data</p>
-          <small>Please check the console for details</small>
-          <button onclick="initializeCourseCharts()" style="margin-top: 10px; padding: 5px 10px; border: none; border-radius: 5px; background: #3498db; color: white; cursor: pointer;">
+    console.error('Error loading course attendance data:', error);
+
+    container.innerHTML = `
+      <div class="no-data" style="grid-column: 1 / -1;">
+        <i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i>
+        <p><strong>Error loading course attendance data</strong></p>
+        <small>Error: ${error.message}</small>
+        <div style="margin-top: 15px;">
+          <button onclick="initializeCourseCharts()"
+                  class="btn btn-sm"
+                  style="padding: 8px 16px; border: none; border-radius: 8px;
+                         background: #3498db; color: white; cursor: pointer; font-weight: 600;">
             Retry
           </button>
         </div>
-      `;
-    }
+      </div>
+    `;
   });
 }
 
@@ -1490,14 +1569,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function refreshCourseData() {
   const refreshIcon = document.getElementById('courseRefreshIcon');
-  if (refreshIcon) refreshIcon.classList.add('spinning');
+  if (refreshIcon) {
+    refreshIcon.classList.add('spinning');
+  }
 
+  console.log('Refreshing course data...');
   initializeCourseCharts();
-  initializeTopCourses();
 
+  // Remove spinning after delay
   setTimeout(() => {
-    if (refreshIcon) refreshIcon.classList.remove('spinning');
-  }, 2000);
+    if (refreshIcon) {
+      refreshIcon.classList.remove('spinning');
+    }
+  }, 2500);
 }
 
 // Enhanced refresh function with better UX
@@ -1600,6 +1684,7 @@ if (@json($attendanceByCourse).length > 0) {
     setTimeout(initializeInitialCourseCharts, 100);
   });
 }
+
 </script>
 
 @endsection
