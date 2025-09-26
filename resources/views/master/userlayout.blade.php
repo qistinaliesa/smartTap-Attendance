@@ -6,7 +6,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>SmartTap</title>
-<link rel="stylesheet" href="https://cdn.materialdesignicons.com/7.0.96/css/materialdesignicons.min.css">
+
     <!-- base:css -->
     <link rel="stylesheet" href="{{ asset('vendors/mdi/css/materialdesignicons.min.css') }}">
     <link rel="stylesheet" href="{{ asset('vendors/css/vendor.bundle.base.css') }}">
@@ -18,8 +18,39 @@
     <!-- inject:css -->
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <!-- endinject -->
-
+<meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="shortcut icon" href="{{ asset('images/logosmart.png') }}" />
+
+    <style>
+        /* Fix sidebar gap issue */
+        .container-scroller {
+            display: flex !important;
+        }
+
+        .sidebar {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            height: 100vh !important;
+            z-index: 1000 !important;
+        }
+
+        .container-fluid.page-body-wrapper {
+            margin-left: 230px !important;
+            padding-left: 0 !important;
+        }
+
+        /* Remove any gaps or spacing */
+        .sidebar, .page-body-wrapper {
+            margin: 0 !important;
+        }
+
+        /* Ensure no body margins */
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    </style>
   </head>
 
 <body>
@@ -70,7 +101,7 @@
             </form>
          </li>
 
-        <li class="nav-item sidebar-category">
+        {{-- <li class="nav-item sidebar-category">
           <p>Pages</p>
           <span></span>
         </li>
@@ -89,7 +120,7 @@
               <li class="nav-item"> <a class="nav-link" href="pages/samples/lock-screen.html"> Lockscreen </a></li>
             </ul>
           </div>
-        </li>
+        </li> --}}
 
       </ul>
     </nav>
@@ -223,48 +254,7 @@
             <span class="mdi mdi-menu"></span>
           </button>
         </div>
-        {{-- <div class="navbar-menu-wrapper navbar-search-wrapper d-none d-lg-flex align-items-center">
-          <ul class="navbar-nav mr-lg-2">
-            <li class="nav-item nav-search d-none d-lg-block">
-              <div class="input-group">
-                <input type="text" class="form-control" placeholder="Search Here..." aria-label="search" aria-describedby="search">
-              </div>
-            </li>
-          </ul>
-          <ul class="navbar-nav navbar-nav-right">
-            <li class="nav-item nav-profile dropdown">
-              <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" id="profileDropdown">
-                <img src="images/faces/face5.jpg" alt="profile"/>
-                <span class="nav-profile-name">Eleanor Richardson</span>
-              </a>
-              <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
-                <a class="dropdown-item">
-                  <i class="mdi mdi-settings text-primary"></i>
-                  Settings
-                </a>
-                <a class="dropdown-item">
-                  <i class="mdi mdi-logout text-primary"></i>
-                  Logout
-                </a>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a href="#" class="nav-link icon-link">
-                <i class="mdi mdi-plus-circle-outline"></i>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a href="#" class="nav-link icon-link">
-                <i class="mdi mdi-web"></i>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a href="#" class="nav-link icon-link">
-                <i class="mdi mdi-clock-outline"></i>
-              </a>
-            </li>
-          </ul>
-        </div> --}}
+
       </nav>
 
 
@@ -276,13 +266,8 @@
 
         <footer class="footer mt-auto">
           <div class="card">
-            <div class="card-body">
-              {{-- <div class="d-sm-flex justify-content-center justify-content-sm-between">
-                <span class="text-muted d-block text-center text-sm-left d-sm-inline-block">Copyright © bootstrapdash.com 2020</span>
-                <span class="text-muted d-block text-center text-sm-left d-sm-inline-block">Distributed By: <a href="https://www.themewagon.com/" target="_blank">ThemeWagon</a></span>
-                <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center"> Free <a href="https://www.bootstrapdash.com/" target="_blank">Bootstrap dashboard templates</a> from Bootstrapdash.com</span>
-              </div> --}}
-            </div>
+
+
           </div>
         </footer>
 

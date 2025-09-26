@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Course extends Model
 {
@@ -40,5 +41,36 @@ class Course extends Model
     {
         return $this->belongsTo(Lecturer::class);
     }
+
+    public function todayAttendancePercentage()
+    {
+        $totalStudents = $this->enrollments()->count();
+
+        if ($totalStudents === 0) {
+            return 0;
+        }
+
+        $today = Carbon::today();
+
+        // Count distinct students who attended today
+        $presentStudents = $this->attendances()
+            ->whereDate('date', $today)
+            ->distinct('card_id')
+            ->count('card_id');
+
+        return round(($presentStudents / $totalStudents) * 100, 1);
+    }
+
+    // Relationships
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
 
 }

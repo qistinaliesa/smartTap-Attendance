@@ -14,8 +14,7 @@ class DashboardController extends Controller
     {
         $today = Carbon::today();
 
-
-        // Basic stats
+        // Global stats
         $totalStudents = DB::table('cards')->count();
 
         $present = DB::table('attendance')
@@ -25,29 +24,41 @@ class DashboardController extends Controller
 
         $absent = max(0, $totalStudents - $present);
 
-        // Attendance by course (only if enrollments/courses exist)
+        // Attendance by course
         $attendanceByCourse = collect();
         if (
             Schema::hasTable('enrollments') &&
             Schema::hasTable('courses') &&
-            Schema::hasColumn('enrollments', 'card_id') &&
+            Schema::hasColumn('enrollments', 'student_id') && // <-- fix to match your schema
             Schema::hasColumn('enrollments', 'course_id')
         ) {
-            $attendanceByCourse = DB::table('attendance')
-                ->join('cards', 'attendance.card_id', '=', 'cards.id')
-                ->join('enrollments', 'cards.id', '=', 'enrollments.card_id')
-                ->join('courses', 'enrollments.course_id', '=', 'courses.id')
-                ->select('courses.course_code', DB::raw('COUNT(DISTINCT attendance.card_id) as total'))
-                ->whereDate('attendance.date', $today)
-                ->groupBy('courses.course_code', 'courses.id')
+            $attendanceByCourse = DB::table('courses')
+                ->leftJoin('enrollments', 'courses.id', '=', 'enrollments.course_id')
+                ->leftJoin('attendance', function ($join) use ($today) {
+                    $join->on('enrollments.student_id', '=', 'attendance.card_id')
+                         ->whereDate('attendance.date', $today);
+                })
+                ->select(
+                    'courses.id',
+                    'courses.course_code',
+                    DB::raw('COUNT(DISTINCT enrollments.student_id) as total_enrolled'),
+                    DB::raw('COUNT(DISTINCT attendance.card_id) as present_today'),
+                    DB::raw('(COUNT(DISTINCT enrollments.student_id) - COUNT(DISTINCT attendance.card_id)) as absent_today'),
+                    DB::raw('CASE
+                                WHEN COUNT(DISTINCT enrollments.student_id) > 0
+                                THEN ROUND((COUNT(DISTINCT attendance.card_id) * 100.0 / COUNT(DISTINCT enrollments.student_id)), 1)
+                                ELSE 0 END as attendance_percentage')
+                )
+                ->groupBy('courses.id', 'courses.course_code')
                 ->get();
         }
 
-        // Recent attendance with course information and time-based status calculation
+        // Recent attendance with course info (your existing helper)
         $recentAttendance = $this->getRecentAttendanceWithCourse($today);
 
         return view('admin.home', compact(
-            'totalStudents', 'present', 'absent', 'attendanceByCourse', 'recentAttendance'
+            'totalStudents', 'present', 'absent',
+            'attendanceByCourse', 'recentAttendance'
         ));
     }
 
@@ -189,7 +200,7 @@ class DashboardController extends Controller
         !Schema::hasColumn('enrollments', 'course_id')
     ) {
         // Return mock data if schema is incomplete
-        return response()->json($this->getMockCourseAttendanceData());
+        return response()->json($this->getCourseAttendanceData());
     }
 
     try {
@@ -231,11 +242,11 @@ class DashboardController extends Controller
         ]);
 
         return response()->json($processedData->isEmpty() ?
-            $this->getMockCourseAttendanceData() : $processedData->values());
+            $this->getCourseAttendanceData() : $processedData->values());
 
     } catch (\Exception $e) {
         \Log::error('Error in getCourseAttendance:', ['error' => $e->getMessage()]);
-        return response()->json($this->getMockCourseAttendanceData());
+        return response()->json($this->getCourseAttendanceData());
     }
 }
 // private function getMockCourseAttendanceData()
@@ -942,6 +953,11 @@ private function getMockEnrollmentData($today)
     ->values();
 }
 }
+
+
+
+
+
 
 
 

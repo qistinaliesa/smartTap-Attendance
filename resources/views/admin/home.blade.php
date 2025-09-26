@@ -92,19 +92,19 @@
     </div>
 
     <div class="modern-stat-card secondary">
-        <div class="stat-header">
-          <div class="stat-content">
-            <div class="stat-value" id="activeCourses">0</div>
-            <div class="stat-label">Active Courses</div>
-            <div class="stat-trend trend-up">
-              <i class="fas fa-graduation-cap"></i> Currently Running
-            </div>
-          </div>
-          <div class="stat-icon secondary">
-            <i class="fas fa-graduation-cap"></i>
+      <div class="stat-header">
+        <div class="stat-content">
+          <div class="stat-value" id="activeCourses">{{ $attendanceByCourse ? $attendanceByCourse->count() : 0 }}</div>
+          <div class="stat-label">Active Courses</div>
+          <div class="stat-trend trend-up">
+            <i class="fas fa-graduation-cap"></i> Currently Running
           </div>
         </div>
+        <div class="stat-icon secondary">
+          <i class="fas fa-graduation-cap"></i>
+        </div>
       </div>
+    </div>
   </div>
 
   <!-- Charts Section -->
@@ -126,44 +126,47 @@
       </div>
     </div>
 
-    <!-- Attendance by Courses -->
-    <div class="chart-card course-attendance-card">
+    <!-- Course Summary with Pie Charts -->
+    <div class="chart-card course-summary-card">
       <h3 class="card-title">
-        <i class="fas fa-chart-pie"></i>
+        <i class="fas fa-graduation-cap"></i>
         Today's Attendance by Course
-        <div class="refresh-btn" onclick="refreshCourseData()">
-          <i class="fas fa-sync-alt" id="courseRefreshIcon"></i>
+        <div class="refresh-btn" onclick="refreshCourseSummary()">
+          <i class="fas fa-sync-alt" id="courseSummaryRefreshIcon"></i>
         </div>
-
       </h3>
-      <div class="course-charts-grid" id="courseChartsGrid">
-        @if($attendanceByCourse->isEmpty())
-          <div class="no-data">
-            <i class="fas fa-chart-pie"></i>
-            <p>No course attendance data available</p>
-          </div>
-        @else
+
+      <div class="course-summary-pie-grid" id="courseSummaryGrid">
+        @if($attendanceByCourse && $attendanceByCourse->isNotEmpty())
           @foreach($attendanceByCourse as $index => $course)
-            <div class="course-pie-chart">
-              <div class="course-header">
-                <h4>{{ $course->course_code }}</h4>
-                <span class="course-total">{{ $course->total }} present</span>
+            <div class="course-pie-item">
+              <div class="course-status-indicator {{ $course->present_today > 0 ? 'active' : 'inactive' }}"></div>
+
+              <div class="course-code-header">{{ $course->course_code }}</div>
+
+              <div class="course-stats-text">
+                {{ $course->present_today }} Present • {{ $course->total_enrolled }} Total
               </div>
-              <div class="pie-chart-container">
-                <canvas id="courseChart{{ $index }}" width="150" height="150"></canvas>
-              </div>
-              <div class="course-stats">
-                <div class="stat-item present">
-                  <span class="stat-dot present-dot"></span>
-                  <span>Present: {{ $course->total }}</span>
-                </div>
-                <div class="stat-item absent">
-                  <span class="stat-dot absent-dot"></span>
-                  <span>Absent: {{ $totalStudents - $course->total }}</span>
+
+              <div class="pie-chart-wrapper">
+                <canvas id="coursePieChart{{ $index }}" width="100" height="100"></canvas>
+                <div class="pie-percentage">
+                  {{ $course->total_enrolled > 0 ? round(($course->present_today / $course->total_enrolled) * 100, 1) : 0 }}%
                 </div>
               </div>
             </div>
           @endforeach
+        @else
+          <!-- Fallback when no data -->
+          <div class="course-pie-item fallback">
+            <div class="course-status-indicator inactive"></div>
+            <div class="course-code-header">No Course Data</div>
+            <div class="course-stats-text">Setup Required</div>
+            <div class="fallback-message">
+              <i class="fas fa-info-circle"></i>
+              <p>Add courses and enroll students to see attendance data</p>
+            </div>
+          </div>
         @endif
       </div>
     </div>
@@ -178,7 +181,6 @@
         <canvas id="weeklyChart" height="300"></canvas>
       </div>
     </div>
-
 
     <!-- Attendance Heatmap -->
     <div class="chart-card">
@@ -207,6 +209,78 @@
 </div>
 
 <style>
+/* All your existing styles remain the same, plus these additions for pie charts */
+/* Dot Legend Styles */
+/* Dot Legend Styles with Labels */
+.dot-legend {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.legend-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.legend-item:hover .legend-dot {
+  transform: scale(1.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.legend-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6c757d;
+  white-space: nowrap;
+  transition: color 0.3s ease;
+}
+
+.legend-item:hover .legend-label {
+  color: #495057;
+}
+
+@media (max-width: 480px) {
+  .dot-legend {
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .legend-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .legend-label {
+    font-size: 10px;
+  }
+
+  .legend-item {
+    gap: 3px;
+    padding: 1px 4px;
+  }
+}
 .modern-content-wrapper {
   background: #ffffff;
   min-height: 100vh;
@@ -368,57 +442,6 @@
   box-shadow: 0 12px 40px rgba(0,0,0,0.15);
 }
 
-.enrollment-chart-card {
-  background: rgba(255,255,255,0.95);
-  backdrop-filter: blur(20px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-  border-radius: 20px;
-  padding: 30px;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(0,0,0,0.05);
-}
-
-.enrollment-chart-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-}
-
-.enrollment-chart-card .card-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #2c3e50;
-  margin-bottom: 25px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.enrollment-chart-card .card-title i {
-  color: #6c757d;
-  margin-right: 12px;
-  font-size: 20px;
-}
-
-.course-attendance-card {
-  background: rgba(255,255,255,0.95);
-  backdrop-filter: blur(20px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-  border-radius: 20px;
-  padding: 30px;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(0,0,0,0.05);
-}
-
-.course-attendance-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-}
-
 .card-title {
   font-size: 20px;
   font-weight: 700;
@@ -460,10 +483,6 @@
   border: 1px solid rgba(0,0,0,0.08);
 }
 
-.chart-container canvas {
-  border-radius: 8px;
-}
-
 .enrollment-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -480,7 +499,6 @@
   border-radius: 12px;
   border: 1px solid rgba(0,0,0,0.06);
   transition: all 0.3s ease;
-  position: relative;
 }
 
 .enrollment-stat-item:hover {
@@ -493,120 +511,124 @@
   font-size: 24px;
   font-weight: 700;
   color: #2c3e50;
-  display: block;
   margin-bottom: 6px;
-  transition: all 0.3s ease;
 }
 
 .enrollment-stat-label {
   font-size: 13px;
   color: #6c757d;
   font-weight: 500;
-  line-height: 1.3;
 }
 
-.enrollment-stat-item:last-child {
-  grid-column: 1 / -1;
-  background: linear-gradient(135deg, rgba(108, 117, 125, 0.05), rgba(73, 80, 87, 0.05));
-  border-color: rgba(108, 117, 125, 0.15);
-}
-
-.enrollment-stat-item:last-child .enrollment-stat-label {
-  font-size: 14px;
-  color: #495057;
-  font-weight: 600;
-}
-
-.enrollment-loading {
-  text-align: center;
-  padding: 60px 20px;
-  color: #6c757d;
-}
-
-.enrollment-loading i {
-  font-size: 48px;
-  margin-bottom: 15px;
-  animation: spin 2s linear infinite;
-}
-
-.enrollment-error {
-  text-align: center;
-  padding: 40px 20px;
-  color: #dc3545;
-  background: rgba(220, 53, 69, 0.05);
-  border-radius: 12px;
-  border: 1px solid rgba(220, 53, 69, 0.15);
-}
-
-.enrollment-error i {
-  font-size: 48px;
-  margin-bottom: 15px;
-  opacity: 0.7;
-}
-
-.course-charts-grid {
+/* Course Summary Pie Chart Styles */
+.course-summary-pie-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 25px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 25px;
 }
 
-.course-pie-chart {
-  background: rgba(248, 249, 250, 0.8);
-  padding: 20px;
-  border-radius: 15px;
-  text-align: center;
-  border: 1px solid rgba(0,0,0,0.05);
-  transition: all 0.3s ease;
-}
-
-.course-pie-chart:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-}
-
-.course-header h4 {
-  font-size: 18px;
-  font-weight: 700;
-  color: #2c3e50;
-  margin-bottom: 5px;
-}
-
-.course-total {
-  font-size: 14px;
-  color: #7f8c8d;
-  margin-bottom: 15px;
-  display: block;
-}
-
-.pie-chart-container {
-  margin: 20px 0;
+.course-pie-item {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 24px;
   display: flex;
-  justify-content: center;
-}
-
-.course-stats {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 15px;
-}
-
-.stat-item {
-  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  font-weight: 600;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0,0,0,0.08);
+  min-height: 200px;
 }
 
-.stat-dot {
+.course-pie-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+  border-color: rgba(52, 152, 219, 0.3);
+}
+
+.course-pie-item.fallback {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, rgba(231, 76, 60, 0.05), rgba(220, 53, 69, 0.05));
+  border-color: rgba(220, 53, 69, 0.2);
+}
+
+.course-status-indicator {
+  position: absolute;
+  top: 12px;
+  right: 12px;
   width: 10px;
   height: 10px;
   border-radius: 50%;
 }
 
-.present-dot { background: #2ECC71; }
-.absent-dot { background: #e74c3c; }
+.course-status-indicator.active {
+  background-color: #2ECC71;
+  box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2);
+}
 
+.course-status-indicator.inactive {
+  background-color: #e74c3c;
+  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2);
+}
+
+.course-code-header {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.course-stats-text {
+  font-size: 13px;
+  color: #7f8c8d;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+.pie-chart-wrapper {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.pie-chart-wrapper canvas {
+  max-width: 100px;
+  max-height: 100px;
+}
+
+.pie-percentage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 16px;
+  font-weight: 700;
+  color: #2c3e50;
+  pointer-events: none;
+}
+
+.fallback-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #7f8c8d;
+  margin-top: 20px;
+}
+
+.fallback-message i {
+  font-size: 32px;
+  opacity: 0.6;
+}
+
+.fallback-message p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Heatmap styles */
 .heatmap-container {
   padding: 20px 0;
 }
@@ -656,71 +678,6 @@
   border-radius: 2px;
 }
 
-.top-courses-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.top-course-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px;
-  background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(46, 204, 113, 0.1));
-  border-radius: 12px;
-  border-left: 4px solid #3498db;
-  transition: all 0.3s ease;
-}
-
-.top-course-item:hover {
-  transform: translateX(5px);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.course-rank {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #3498db;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.course-details h5 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 3px;
-}
-
-.course-details p {
-  font-size: 12px;
-  color: #7f8c8d;
-}
-
-.course-percentage {
-  font-size: 18px;
-  font-weight: 700;
-  color: #2ECC71;
-}
-
-.no-data {
-  text-align: center;
-  color: #7f8c8d;
-  padding: 40px 20px;
-}
-
-.no-data i {
-  font-size: 48px;
-  margin-bottom: 15px;
-  opacity: 0.5;
-}
-
 .spinning {
   animation: spin 1s linear infinite;
 }
@@ -730,21 +687,7 @@
   100% { transform: rotate(360deg); }
 }
 
-@media (max-width: 1200px) {
-  .course-charts-grid {
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  }
-
-  .enrollment-stats {
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px;
-  }
-
-  .enrollment-stat-number {
-    font-size: 20px;
-  }
-}
-
+/* Mobile Responsive */
 @media (max-width: 768px) {
   .stats-grid {
     grid-template-columns: 1fr;
@@ -758,25 +701,26 @@
     padding: 15px;
   }
 
-  .course-charts-grid {
+  .course-summary-pie-grid {
     grid-template-columns: 1fr;
+    gap: 15px;
   }
 
-  .enrollment-stats {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+  .course-pie-item {
+    padding: 20px;
+    min-height: 180px;
   }
 
-  .enrollment-stat-item {
-    padding: 12px 8px;
+  .course-code-header {
+    font-size: 16px;
   }
 
-  .enrollment-stat-number {
-    font-size: 18px;
-  }
-
-  .enrollment-stat-label {
+  .course-stats-text {
     font-size: 12px;
+  }
+
+  .pie-percentage {
+    font-size: 14px;
   }
 
   .heatmap-grid {
@@ -794,15 +738,32 @@
     padding: 15px;
   }
 }
+
+@media (max-width: 480px) {
+  .course-summary-card {
+    padding: 20px;
+  }
+
+  .course-pie-item {
+    min-height: 160px;
+  }
+
+  .pie-chart-wrapper canvas {
+    max-width: 80px;
+    max-height: 80px;
+  }
+}
 </style>
 
+<!-- Chart.js CDN - Load FIRST -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
 // Global variables
 let courseCharts = [];
 let enrollmentChart = null;
-let topCoursesChart = null;
 let weeklyChart = null;
+let courseSummaryCharts = [];
 
 // Real-time clock
 function updateTime() {
@@ -833,35 +794,265 @@ function updateTime() {
   }
 }
 
-// Initialize course enrollment bar chart
+// Course Summary Pie Charts with Dot Legends
+// Course Summary Pie Charts with Dot Legends
+function initializeCourseSummaryPieCharts() {
+  console.log('=== Initializing Course Summary Pie Charts with Dot Legends ===');
+
+  // Check if Chart.js is loaded
+  if (typeof Chart === 'undefined') {
+    console.error('Chart.js not loaded! Waiting...');
+    setTimeout(initializeCourseSummaryPieCharts, 500);
+    return;
+  }
+
+  // Clear existing charts
+  courseSummaryCharts.forEach(chart => {
+    if (chart) chart.destroy();
+  });
+  courseSummaryCharts = [];
+
+  // Get course data from Laravel
+  const courseData = @json($attendanceByCourse ?? []);
+  console.log('Course data:', courseData);
+
+  if (!courseData || courseData.length === 0) {
+    console.log('No course data available');
+    return;
+  }
+
+  // Create pie chart for each course
+  courseData.forEach((course, index) => {
+    const canvasId = `coursePieChart${index}`;
+    const ctx = document.getElementById(canvasId);
+
+    if (!ctx) {
+      console.error(`Canvas ${canvasId} not found`);
+      return;
+    }
+
+    const enrolledCount = parseInt(course.total_enrolled) || 0;
+    const presentCount = parseInt(course.present_today) || 0;
+    const absentCount = Math.max(0, enrolledCount - presentCount);
+    const attendancePercentage = enrolledCount > 0 ?
+      Math.round((presentCount / enrolledCount) * 100 * 10) / 10 : 0;
+
+    // Color based on attendance rate
+    let primaryColor, secondaryColor;
+    if (attendancePercentage >= 80) {
+      primaryColor = '#2ECC71';
+      secondaryColor = '#E8F5E8';
+    } else if (attendancePercentage >= 60) {
+      primaryColor = '#f39c12';
+      secondaryColor = '#FDF2E9';
+    } else if (attendancePercentage >= 40) {
+      primaryColor = '#e67e22';
+      secondaryColor = '#FDEDEC';
+    } else {
+      primaryColor = '#e74c3c';
+      secondaryColor = '#FADBD8';
+    }
+
+    try {
+      const chart = new Chart(ctx.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: [], // Remove labels to hide text legend
+          datasets: [{
+            data: [presentCount, absentCount],
+            backgroundColor: [primaryColor, secondaryColor],
+            borderColor: [primaryColor, primaryColor],
+            borderWidth: 2,
+            cutout: '70%'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false // Hide the default legend
+            },
+            tooltip: {
+              enabled: true,
+              backgroundColor: 'rgba(44, 62, 80, 0.95)',
+              titleColor: '#ffffff',
+              bodyColor: '#ffffff',
+              borderColor: primaryColor,
+              borderWidth: 2,
+              cornerRadius: 8,
+              callbacks: {
+                title: function() {
+                  return course.course_code;
+                },
+                label: function(context) {
+                  const value = context.parsed;
+                  const total = presentCount + absentCount;
+                  const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                  const label = context.dataIndex === 0 ? 'Present' : 'Absent';
+                  return `${label}: ${value} students (${percentage}%)`;
+                }
+              }
+            }
+          },
+          animation: {
+            animateRotate: true,
+            duration: 1500,
+            easing: 'easeOutBounce'
+          },
+          interaction: {
+            intersect: false
+          }
+        }
+      });
+
+      courseSummaryCharts.push(chart);
+
+      // Add custom dot legend after chart creation
+      addDotLegendToPieChart(canvasId, primaryColor, secondaryColor, presentCount, absentCount);
+
+      console.log(`✅ Pie chart with dot legend created for ${course.course_code}`);
+
+    } catch (error) {
+      console.error(`❌ Error creating chart for ${course.course_code}:`, error);
+    }
+  });
+
+  console.log(`Created ${courseSummaryCharts.length} pie charts with dot legends`);
+}
+
+// Function to add dot legend to pie chart
+function addDotLegendToPieChart(canvasId, primaryColor, secondaryColor, presentCount, absentCount) {
+  const canvasElement = document.getElementById(canvasId);
+  if (!canvasElement) return;
+
+  // Find the parent course-pie-item
+  const courseItem = canvasElement.closest('.course-pie-item');
+  if (!courseItem) return;
+
+  // Remove existing dot legend if any
+  const existingLegend = courseItem.querySelector('.dot-legend');
+  if (existingLegend) {
+    existingLegend.remove();
+  }
+
+  // Create dot legend container
+  const dotLegend = document.createElement('div');
+  dotLegend.className = 'dot-legend';
+
+  // Create present dot
+  const presentDot = document.createElement('div');
+  presentDot.className = 'legend-dot';
+  presentDot.style.backgroundColor = primaryColor;
+  presentDot.title = `Present: ${presentCount} students`;
+
+  // Create absent dot
+  const absentDot = document.createElement('div');
+  absentDot.className = 'legend-dot';
+  absentDot.style.backgroundColor = secondaryColor;
+  absentDot.style.border = `1px solid ${primaryColor}`;
+  absentDot.title = `Absent: ${absentCount} students`;
+
+  dotLegend.appendChild(presentDot);
+  dotLegend.appendChild(absentDot);
+
+  // Insert the dot legend after the pie chart wrapper
+  const pieWrapper = courseItem.querySelector('.pie-chart-wrapper');
+  if (pieWrapper) {
+    pieWrapper.insertAdjacentElement('afterend', dotLegend);
+  }
+}
+
+
+
+// Function to add dot legend to pie chart
+function addDotLegendToPieChart(canvasId, primaryColor, secondaryColor, presentCount, absentCount) {
+  const canvasElement = document.getElementById(canvasId);
+  if (!canvasElement) return;
+
+  // Find the parent course-pie-item
+  const courseItem = canvasElement.closest('.course-pie-item');
+  if (!courseItem) return;
+
+  // Remove existing dot legend if any
+  const existingLegend = courseItem.querySelector('.dot-legend');
+  if (existingLegend) {
+    existingLegend.remove();
+  }
+
+  // Create dot legend container
+  const dotLegend = document.createElement('div');
+  dotLegend.className = 'dot-legend';
+
+  // Create present dot
+  const presentDot = document.createElement('div');
+  presentDot.className = 'legend-dot';
+  presentDot.style.backgroundColor = primaryColor;
+  presentDot.title = `Present: ${presentCount} students`;
+
+  // Create absent dot
+  const absentDot = document.createElement('div');
+  absentDot.className = 'legend-dot';
+  absentDot.style.backgroundColor = secondaryColor;
+  absentDot.style.border = `1px solid ${primaryColor}`;
+  absentDot.title = `Absent: ${absentCount} students`;
+
+  dotLegend.appendChild(presentDot);
+  dotLegend.appendChild(absentDot);
+
+  // Insert the dot legend after the pie chart wrapper
+  const pieWrapper = courseItem.querySelector('.pie-chart-wrapper');
+  if (pieWrapper) {
+    pieWrapper.insertAdjacentElement('afterend', dotLegend);
+  }
+}
+
+/* CSS Styles for Dot Legend */
+/*
+Add these styles to your existing CSS:
+
+.dot-legend {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.legend-dot:hover {
+  transform: scale(1.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 480px) {
+  .dot-legend {
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .legend-dot {
+    width: 6px;
+    height: 6px;
+  }
+}
+*/
+
+// Initialize enrollment chart
 function initializeEnrollmentChart() {
   console.log('Initializing enrollment chart...');
 
   const chartContainer = document.querySelector('.enrollment-chart-card .chart-container');
   const statsContainer = document.getElementById('enrollmentStats');
 
-  // Show loading state
-  if (chartContainer) {
-    chartContainer.innerHTML = `
-      <div class="enrollment-loading">
-        <i class="fas fa-spinner"></i>
-        <p>Loading enrollment data...</p>
-      </div>
-    `;
-  }
-
-  if (statsContainer) {
-    statsContainer.innerHTML = `
-      <div class="enrollment-stat-item" style="grid-column: 1 / -1;">
-        <div class="enrollment-loading">
-          <i class="fas fa-spinner" style="font-size: 24px;"></i>
-          <span>Loading statistics...</span>
-        </div>
-      </div>
-    `;
-  }
-
-  // Destroy existing chart
   if (enrollmentChart) {
     enrollmentChart.destroy();
     enrollmentChart = null;
@@ -873,515 +1064,81 @@ function initializeEnrollmentChart() {
       'X-Requested-With': 'XMLHttpRequest'
     }
   })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.json();
-  })
+  .then(response => response.json())
   .then(data => {
-    console.log('Enrollment data received:', data);
-
-    // Restore chart container
     if (chartContainer) {
       chartContainer.innerHTML = '<canvas id="enrollmentChart" height="300"></canvas>';
     }
 
     const ctx = document.getElementById('enrollmentChart');
-    if (!ctx) {
-      console.error('Enrollment chart canvas not found');
-      return;
-    }
+    if (!ctx || !data || data.length === 0) return;
 
-    if (!data || data.length === 0) {
-      ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
-
-      if (chartContainer) {
-        chartContainer.innerHTML = `
-          <div class="no-data">
-            <i class="fas fa-chart-bar"></i>
-            <p>No enrollment data available</p>
-            <small>Make sure you have courses and enrollments set up</small>
-          </div>
-        `;
-      }
-
-      if (statsContainer) {
-        statsContainer.innerHTML = `
-          <div class="enrollment-stat-item" style="grid-column: 1 / -1;">
-            <span class="enrollment-stat-label">No enrollment data available</span>
-          </div>
-        `;
-      }
-      return;
-    }
-
-    // Sort data by enrollment count (descending)
     const sortedData = data.sort((a, b) => b.enrolled - a.enrolled);
-    const maxEnrollment = Math.max(...sortedData.map(course => course.enrolled));
-      const minEnrollment = Math.min(...sortedData.map(course => course.enrolled));
 
-// If all values are the same or the range is too small, we'll adjust the chart scale differently
-const needsScaleFix = (maxEnrollment - minEnrollment) <= 1;
-
-
-    // Enhanced gradient colors
     const gradientColors = [
       { bg: 'rgba(52, 152, 219, 0.8)', border: '#3498db' },
       { bg: 'rgba(46, 204, 113, 0.8)', border: '#2ECC71' },
       { bg: 'rgba(231, 76, 60, 0.8)', border: '#e74c3c' },
-      { bg: 'rgba(243, 156, 18, 0.8)', border: '#f39c12' },
-      { bg: 'rgba(155, 89, 182, 0.8)', border: '#9b59b6' },
-      { bg: 'rgba(26, 188, 156, 0.8)', border: '#1abc9c' },
-      { bg: 'rgba(230, 126, 34, 0.8)', border: '#e67e22' },
-      { bg: 'rgba(52, 73, 94, 0.8)', border: '#34495e' }
+      { bg: 'rgba(243, 156, 18, 0.8)', border: '#f39c12' }
     ];
 
     enrollmentChart = new Chart(ctx.getContext('2d'), {
-  type: 'bar',
-  data: {
-    labels: sortedData.map(course => course.course_code),
-    datasets: [{
-      label: 'Total Enrollments',
-      data: sortedData.map(course => course.enrolled),
-      backgroundColor: sortedData.map((_, index) => gradientColors[index % gradientColors.length].bg),
-      borderColor: sortedData.map((_, index) => gradientColors[index % gradientColors.length].border),
-      borderWidth: 2,
-      borderRadius: 10,
-      borderSkipped: false,
-      hoverBackgroundColor: sortedData.map((_, index) => gradientColors[index % gradientColors.length].border + '90'),
-      hoverBorderWidth: 3,
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: true,
-        position: 'top',
-        labels: {
-          font: {
-            size: 14,
-            weight: '600'
-          },
-          color: '#2c3e50',
-          usePointStyle: true,
-          pointStyle: 'rectRounded'
-        }
+      type: 'bar',
+      data: {
+        labels: sortedData.map(course => course.course_code),
+        datasets: [{
+          label: 'Total Enrollments',
+          data: sortedData.map(course => course.enrolled),
+          backgroundColor: sortedData.map((_, index) => gradientColors[index % gradientColors.length].bg),
+          borderColor: sortedData.map((_, index) => gradientColors[index % gradientColors.length].border),
+          borderWidth: 2,
+          borderRadius: 10,
+        }]
       },
-      tooltip: {
-        backgroundColor: 'rgba(44, 62, 80, 0.95)',
-        titleColor: '#ffffff',
-        bodyColor: '#ffffff',
-        borderColor: '#3498db',
-        borderWidth: 2,
-        cornerRadius: 12,
-        displayColors: true,
-        titleFont: {
-          size: 16,
-          weight: '600'
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true }
         },
-        bodyFont: {
-          size: 14,
-          weight: '400'
-        },
-        padding: 15,
-        callbacks: {
-          title: function(context) {
-            const course = sortedData[context[0].dataIndex];
-            return course.title || course.course_code;
-          },
-          label: function(context) {
-            const course = sortedData[context.dataIndex];
-            return [
-              `Enrollments: ${context.parsed.y}`,
-              `Present Today: ${course.total || 0}`,
-              `Attendance Rate: ${course.attendance_percentage || 0}%`
-            ];
-          },
-          afterLabel: function(context) {
-            const course = sortedData[context.dataIndex];
-            const rank = context.dataIndex + 1;
-            return `Rank: #${rank}`;
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1 }
           }
         }
       }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        // FIX 1: Set explicit min/max values to prevent auto-scaling issues
-        min: 0,
-        max: Math.max(...sortedData.map(course => course.enrolled)) + 0,
+    });
 
-        // FIX 2: Add grace percentage for padding
-        grace: '15%',
-        grid: {
-          color: 'rgba(0,0,0,0.08)',
-          drawBorder: false,
-          lineWidth: 1
-        },
-        ticks: {
-          color: '#7f8c8d',
-          font: {
-            size: 12,
-            weight: '500'
-          },
-          padding: 10,
-          // FIX 3: Force integer steps for small values
-          stepSize: 1,
-          callback: function(value) {
-            return Math.floor(value) === value ? value : '';
-          }
-        },
-        title: {
-          display: true,
-          text: 'Number of Students',
-          color: '#2c3e50',
-          font: {
-            size: 14,
-            weight: '600'
-          },
-          padding: 20
-        }
-
-      },
-      x: {
-        grid: {
-          display: false
-        },
-        ticks: {
-          color: '#7f8c8d',
-          font: {
-            size: 12,
-            weight: '500'
-          },
-          maxRotation: 45,
-          padding: 10
-        },
-        title: {
-          display: true,
-          text: 'Courses',
-          color: '#2c3e50',
-          font: {
-            size: 14,
-            weight: '600'
-          },
-          padding: 20
-        }
-      }
-    },
-    animation: {
-      duration: 2000,
-      easing: 'easeOutBounce'
-    },
-    interaction: {
-      intersect: false,
-      mode: 'index'
-    }
-  }
-});
-
-// FIX 4: Add this debug logging after chart creation
-console.log('Chart data for debugging:', {
-  labels: sortedData.map(course => course.course_code),
-  data: sortedData.map(course => course.enrolled),
-  maxValue: Math.max(...sortedData.map(course => course.enrolled)),
-  chartConfig: enrollmentChart.config
-});
-
-    // Update enrollment stats with enhanced styling
     updateEnrollmentStats(sortedData);
-
-    console.log('Enrollment chart created successfully');
   })
   .catch(error => {
     console.error('Error loading enrollment data:', error);
-
-    // Show error state in chart container
     if (chartContainer) {
       chartContainer.innerHTML = `
-        <div class="enrollment-error">
-          <i class="fas fa-exclamation-triangle"></i>
-          <p><strong>Error loading enrollment data</strong></p>
-          <small>Please check your network connection and try again</small>
-          <button onclick="initializeEnrollmentChart()"
-                  style="margin-top: 15px; padding: 8px 16px; border: none; border-radius: 8px;
-                         background: #e74c3c; color: white; cursor: pointer; font-weight: 600;">
-            Retry
-          </button>
-        </div>
-      `;
-    }
-
-    // Show error state in stats
-    if (statsContainer) {
-      statsContainer.innerHTML = `
-        <div class="enrollment-stat-item enrollment-error" style="grid-column: 1 / -1;">
-          <i class="fas fa-exclamation-triangle"></i>
-          <span>Error loading enrollment statistics</span>
+        <div style="text-align: center; color: #e74c3c; padding: 40px;">
+          <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
+          <p>Error loading enrollment data</p>
+          <button onclick="initializeEnrollmentChart()" style="padding: 8px 16px; border: none; border-radius: 8px; background: #e74c3c; color: white; cursor: pointer; font-weight: 600; margin-top: 10px;">Retry</button>
         </div>
       `;
     }
   });
 }
 
-// Enhanced enrollment statistics update function
 function updateEnrollmentStats(data) {
   const statsContainer = document.getElementById('enrollmentStats');
   if (!statsContainer || !data || data.length === 0) return;
 
-  const totalEnrollments = data.reduce((sum, course) => sum + course.enrolled, 0);
-  const avgEnrollment = Math.round(totalEnrollments / data.length);
-  const maxEnrollment = Math.max(...data.map(course => course.enrolled));
-  const minEnrollment = Math.min(...data.map(course => course.enrolled));
-  const mostPopularCourse = data.find(course => course.enrolled === maxEnrollment);
-
+  const mostPopularCourse = data[0];
   statsContainer.innerHTML = `
-
     <div class="enrollment-stat-item">
       <span class="enrollment-stat-label">
         Most Popular: <strong>${mostPopularCourse?.course_code}</strong>
-        (${maxEnrollment.toLocaleString()} students)
+        (${mostPopularCourse?.enrolled} students)
       </span>
     </div>
   `;
-}
-function updateActiveCourses(courseData = null) {
-  const activeCoursesElement = document.getElementById('activeCourses');
-  if (!activeCoursesElement) return;
-
-  // If course data is provided, use it directly
-  if (courseData && Array.isArray(courseData)) {
-    activeCoursesElement.textContent = courseData.length;
-    return;
-  }
-
-  // Otherwise, try to get from existing enrollment chart
-  if (enrollmentChart && enrollmentChart.data && enrollmentChart.data.labels) {
-    activeCoursesElement.textContent = enrollmentChart.data.labels.length;
-    return;
-  }
-
-  // Fallback: fetch from the same endpoint as enrollment chart
-  fetch('/admin/dashboard/course-enrollment', {
-    headers: {
-      'Accept': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest'
-    }
-  })
-  .then(response => response.json())
-  .then(data => {
-    const courseCount = Array.isArray(data) ? data.length : 0;
-    activeCoursesElement.textContent = courseCount;
-  })
-  .catch(error => {
-    console.error('Error fetching active courses:', error);
-    activeCoursesElement.textContent = 0;
-  });
-}
-
-
-// Initialize course pie charts
-function initializeCourseCharts() {
-  console.log('Initializing course charts...');
-
-  // Clear existing charts
-  courseCharts.forEach(chart => {
-    if (chart) chart.destroy();
-  });
-  courseCharts = [];
-
-  const container = document.getElementById('courseChartsGrid');
-  if (!container) {
-    console.error('Course charts container not found');
-    return;
-  }
-
-  // Show loading state
-  container.innerHTML = `
-    <div class="no-data" style="grid-column: 1 / -1;">
-      <i class="fas fa-spinner fa-spin"></i>
-      <p>Loading course attendance data...</p>
-    </div>
-  `;
-
-  // Fetch real-time course data
-  fetch('/admin/dashboard/course-attendance', {
-    headers: {
-      'Accept': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest'
-    }
-  })
-  .then(response => {
-    console.log('Course attendance response status:', response.status);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.json();
-  })
-  .then(courseData => {
-    console.log('Course attendance data received:', courseData);
-
-    // Clear loading state
-    container.innerHTML = '';
-
-    if (!courseData || courseData.length === 0) {
-      container.innerHTML = `
-        <div class="no-data" style="grid-column: 1 / -1;">
-          <i class="fas fa-chart-pie"></i>
-          <p>No course attendance data available</p>
-          <small>Make sure you have courses with enrolled students</small>
-        </div>
-      `;
-      return;
-    }
-
-    // Update active courses count using this data
-    updateActiveCourses(courseData);
-
-    // Create charts for each course
-    courseData.forEach((course, index) => {
-      console.log(`Creating chart for course: ${course.course_code}`, course);
-
-      const courseDiv = document.createElement('div');
-      courseDiv.className = 'course-pie-chart';
-
-      const enrolledCount = parseInt(course.enrolled) || 0;
-      const presentCount = parseInt(course.total) || 0;
-      const absentCount = Math.max(0, enrolledCount - presentCount);
-      const attendancePercentage = course.attendance_percentage || 0;
-
-      // FIXED: Use the actual percentage from backend instead of recalculating
-      const displayPercentage = attendancePercentage;
-
-      courseDiv.innerHTML = `
-        <div class="course-header">
-          <h4>${course.course_code}</h4>
-          <span class="course-total">${presentCount}/${enrolledCount} students (${displayPercentage}%)</span>
-        </div>
-        <div class="pie-chart-container">
-          <canvas id="courseChart${index}" width="150" height="150"></canvas>
-        </div>
-        <div class="course-stats">
-          <div class="stat-item present">
-            <span class="stat-dot present-dot"></span>
-            <span>Present: ${presentCount}</span>
-          </div>
-          <div class="stat-item absent">
-            <span class="stat-dot absent-dot"></span>
-            <span>Absent: ${absentCount}</span>
-          </div>
-        </div>
-      `;
-
-      container.appendChild(courseDiv);
-
-      // Create the chart with a small delay to ensure DOM is ready
-      setTimeout(() => {
-        const ctx = document.getElementById(`courseChart${index}`);
-        if (!ctx) {
-          console.error(`Canvas element courseChart${index} not found`);
-          return;
-        }
-
-        try {
-          const chart = new Chart(ctx.getContext('2d'), {
-            type: 'doughnut',
-            data: {
-              labels: ['Present', 'Absent'],
-              datasets: [{
-                data: [presentCount, absentCount],
-                backgroundColor: ['#2ECC71', '#e74c3c'],
-                borderWidth: 2,
-                borderColor: '#ffffff',
-                hoverBackgroundColor: ['#27AE60', '#c0392b'],
-                hoverBorderWidth: 3
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: {
-                  display: false
-                },
-                tooltip: {
-                  backgroundColor: 'rgba(44, 62, 80, 0.95)',
-                  titleColor: '#ffffff',
-                  bodyColor: '#ffffff',
-                  borderColor: '#3498db',
-                  borderWidth: 2,
-                  cornerRadius: 8,
-                  displayColors: true,
-                  callbacks: {
-                    title: function(context) {
-                      return course.course_code;
-                    },
-                    label: function(context) {
-                      const label = context.label || '';
-                      const value = context.parsed;
-                      const total = enrolledCount;
-                      const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                      return `${label}: ${value} students (${percentage}%)`;
-                    },
-                    afterBody: function(context) {
-                      return [`Total Enrolled: ${enrolledCount}`, `Attendance Rate: ${displayPercentage}%`];
-                    }
-                  }
-                }
-              },
-              cutout: '60%',
-              animation: {
-                animateRotate: true,
-                animateScale: false,
-                duration: 1000
-              }
-            }
-          });
-
-          courseCharts.push(chart);
-          console.log(`Chart created successfully for ${course.course_code}`);
-
-        } catch (error) {
-          console.error(`Error creating chart for ${course.course_code}:`, error);
-
-          // Show error in the chart container
-          const chartContainer = document.getElementById(`courseChart${index}`);
-          if (chartContainer) {
-            chartContainer.parentElement.innerHTML = `
-              <div class="chart-error">
-                <i class="fas fa-exclamation-triangle"></i>
-                <small>Error loading chart</small>
-              </div>
-            `;
-          }
-        }
-      }, 100 * index); // Stagger chart creation
-    });
-
-    console.log(`Created ${courseData.length} course charts successfully`);
-  })
-  .catch(error => {
-    console.error('Error loading course attendance data:', error);
-
-    container.innerHTML = `
-      <div class="no-data" style="grid-column: 1 / -1;">
-        <i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i>
-        <p><strong>Error loading course attendance data</strong></p>
-        <small>Error: ${error.message}</small>
-        <div style="margin-top: 15px;">
-          <button onclick="initializeCourseCharts()"
-                  class="btn btn-sm"
-                  style="padding: 8px 16px; border: none; border-radius: 8px;
-                         background: #3498db; color: white; cursor: pointer; font-weight: 600;">
-            Retry
-          </button>
-        </div>
-      </div>
-    `;
-  });
 }
 
 // Initialize weekly chart
@@ -1389,7 +1146,6 @@ function initializeWeeklyChart() {
   const ctx = document.getElementById('weeklyChart');
   if (!ctx) return;
 
-  // Destroy existing chart
   if (weeklyChart) {
     weeklyChart.destroy();
   }
@@ -1481,121 +1237,37 @@ function initializeHeatmap() {
     .catch(error => console.error('Error loading heatmap data:', error));
 }
 
-// Initialize top courses
-function initializeTopCourses() {
-  const container = document.getElementById('topCoursesList');
-  if (!container) return;
-
-  fetch('/admin/dashboard/top-courses')
-    .then(response => response.json())
-    .then(data => {
-      container.innerHTML = '';
-
-      if (data.length === 0) {
-        container.innerHTML = `
-          <div class="no-data">
-            <i class="fas fa-trophy"></i>
-            <p>No course performance data available</p>
-          </div>
-        `;
-        return;
-      }
-
-      data.forEach((course, index) => {
-        const courseItem = document.createElement('div');
-        courseItem.className = 'top-course-item';
-        courseItem.innerHTML = `
-          <div class="course-rank">${index + 1}</div>
-          <div class="course-details">
-            <h5>${course.course_code}</h5>
-            <p>${course.present_students}/${course.enrolled_students} students</p>
-          </div>
-          <div class="course-percentage">${course.attendance_percentage}%</div>
-        `;
-        container.appendChild(courseItem);
-      });
-    })
-    .catch(error => console.error('Error loading top courses:', error));
-}
-
 // Refresh functions
-function refreshDashboardDataUpdated() {
-  fetch('/admin/dashboard/realtime-data', {
-    headers: {
-      'Accept': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest'
-    }
-  })
-  .then(response => response.json())
-  .then(data => {
-    const elements = {
-      totalStudents: document.getElementById('totalStudents'),
-      presentToday: document.getElementById('presentToday'),
-      absentToday: document.getElementById('absentToday'),
-      presentPercentage: document.getElementById('presentPercentage'),
-      absentPercentage: document.getElementById('absentPercentage'),
-      activeCourses: document.getElementById('activeCourses') // Add this line
-    };
-
-    if (elements.totalStudents) elements.totalStudents.textContent = data.totalStudents;
-    if (elements.presentToday) elements.presentToday.textContent = data.present;
-    if (elements.absentToday) elements.absentToday.textContent = data.absent;
-    if (elements.presentPercentage) elements.presentPercentage.textContent = data.presentPercentage + '%';
-    if (elements.absentPercentage) elements.absentPercentage.textContent = data.absentPercentage + '%';
-
-    // Update active courses count
-    if (elements.activeCourses) {
-      elements.activeCourses.textContent = data.activeCourses || 0;
-    }
-
-    // Update time-based stats (keep existing late and early counts)
-    if (data.timeBasedStats) {
-      const timeElements = {
-        lateCount: document.getElementById('lateCount'),
-        earlyCount: document.getElementById('earlyCount')
-      };
-
-      if (timeElements.lateCount) timeElements.lateCount.textContent = data.timeBasedStats.late;
-      if (timeElements.earlyCount) timeElements.earlyCount.textContent = data.timeBasedStats.early;
-    }
-  })
-  .catch(error => console.error('Error refreshing data:', error));
-}
-
-// Initialize active courses count on page load
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(updateActiveCourses, 500);
-});
-
-function refreshCourseData() {
-  const refreshIcon = document.getElementById('courseRefreshIcon');
+function refreshCourseSummary() {
+  const refreshIcon = document.getElementById('courseSummaryRefreshIcon');
   if (refreshIcon) {
     refreshIcon.classList.add('spinning');
   }
 
-  console.log('Refreshing course data...');
-  initializeCourseCharts();
+  const summaryGrid = document.getElementById('courseSummaryGrid');
+  if (summaryGrid) {
+    summaryGrid.style.opacity = '0.6';
+    summaryGrid.style.pointerEvents = 'none';
+  }
 
-  // Remove spinning after delay
   setTimeout(() => {
+    initializeCourseSummaryPieCharts();
+
+    if (summaryGrid) {
+      summaryGrid.style.opacity = '1';
+      summaryGrid.style.pointerEvents = 'auto';
+    }
+
     if (refreshIcon) {
       refreshIcon.classList.remove('spinning');
     }
-  }, 2500);
+  }, 1500);
 }
 
-// Enhanced refresh function with better UX
 function refreshEnrollmentChart() {
   const refreshIcon = document.getElementById('enrollmentRefreshIcon');
-  const refreshBtn = refreshIcon?.parentElement;
-
   if (refreshIcon) {
     refreshIcon.classList.add('spinning');
-  }
-
-  if (refreshBtn) {
-    refreshBtn.style.pointerEvents = 'none';
-    refreshBtn.style.opacity = '0.7';
   }
 
   initializeEnrollmentChart();
@@ -1604,90 +1276,62 @@ function refreshEnrollmentChart() {
     if (refreshIcon) {
       refreshIcon.classList.remove('spinning');
     }
-    if (refreshBtn) {
-      refreshBtn.style.pointerEvents = 'auto';
-      refreshBtn.style.opacity = '1';
-    }
   }, 2500);
 }
 
 // Initialize everything when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM loaded, starting initialization...');
+
   // Start clock immediately
   updateTime();
   setInterval(updateTime, 1000);
 
   // Initialize charts with delays to prevent conflicts
-  setTimeout(initializeEnrollmentChart, 500);
-  setTimeout(initializeCourseCharts, 1000);
+  setTimeout(() => {
+    console.log('Initializing pie charts...');
+    initializeCourseSummaryPieCharts();
+  }, 500);
+
+  setTimeout(initializeEnrollmentChart, 1000);
   setTimeout(initializeWeeklyChart, 1500);
   setTimeout(initializeHeatmap, 2000);
-  setTimeout(initializeTopCourses, 2500);
 
-  // Set up auto-refresh intervals
-  setInterval(refreshDashboardData, 30000); // Every 30 seconds
+  // Auto-refresh intervals
   setInterval(() => {
     initializeHeatmap();
-    initializeTopCourses();
   }, 60000); // Every minute
-  setInterval(initializeCourseCharts, 45000); // Every 45 seconds for courses
-  setInterval(initializeEnrollmentChart, 60000); // Every minute for enrollments
 });
 
-// Handle window resize
+// Handle window resize for all charts
 window.addEventListener('resize', function() {
-  [enrollmentChart, topCoursesChart, weeklyChart, ...courseCharts].forEach(chart => {
+  [enrollmentChart, weeklyChart, ...courseSummaryCharts].forEach(chart => {
     if (chart) chart.resize();
   });
 });
 
-// Initialize course charts on page load with existing data
-function initializeInitialCourseCharts() {
-  const courseData = @json($attendanceByCourse);
-  const totalStudents = {{ $totalStudents }};
+// Debug function - call in console to check pie chart status
+function debugPieCharts() {
+  console.log('=== PIE CHART DEBUG ===');
+  console.log('Chart.js loaded:', typeof Chart !== 'undefined');
+  console.log('Course data:', @json($attendanceByCourse ?? []));
+  console.log('Charts created:', courseSummaryCharts.length);
 
+  const courseData = @json($attendanceByCourse ?? []);
   courseData.forEach((course, index) => {
-    const ctx = document.getElementById(`courseChart${index}`);
-    if (ctx) {
-      const presentCount = course.total;
-      const absentCount = totalStudents - presentCount;
-
-      const chart = new Chart(ctx.getContext('2d'), {
-        type: 'doughnut',
-        data: {
-          labels: ['Present', 'Absent'],
-          datasets: [{
-            data: [presentCount, absentCount],
-            backgroundColor: ['#2ECC71', '#e74c3c'],
-            borderWidth: 2,
-            borderColor: '#ffffff'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
-          cutout: '60%'
-        }
-      });
-
-      courseCharts.push(chart);
-    }
+    const canvas = document.getElementById(`coursePieChart${index}`);
+    console.log(`Canvas coursePieChart${index}:`, canvas ? 'EXISTS' : 'MISSING');
   });
 }
 
-// Initialize initial charts if data exists
-if (@json($attendanceByCourse).length > 0) {
-  document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(initializeInitialCourseCharts, 100);
-  });
-}
-
+console.log('JavaScript loaded successfully');
 </script>
 
 @endsection
+
+
+
+
 
 
 
