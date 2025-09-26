@@ -62,7 +62,7 @@ class LoginController extends Controller
             Auth::guard('lecturer')->login($lecturer, $remember);
             $request->session()->regenerate();
 
-            return redirect()->intended('/lecturer/dashboard');
+            return redirect()->intended('/lecturer/courses');
         }
 
         // If both fail, return error

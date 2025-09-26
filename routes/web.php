@@ -34,7 +34,7 @@ Route::get('/debug-user', function () {
 Route::get('/', function () {
     // Check lecturer authentication first
     if (Auth::guard('lecturer')->check()) {
-        return redirect('/lecturer/dashboard');
+        return redirect('/lecturer/courses');  // <- Updated to redirect to courses
     }
 
     // Then check regular user authentication (your original logic)
@@ -135,6 +135,8 @@ Route::middleware(['lecturer.auth'])->prefix('lecturer')->group(function () {
     Route::get('/dashboard', function () {
         return view('users.home');
     })->name('lusers.home');
+    Route::get('/change-password', [LecturerController::class, 'showChangePasswordForm'])->name('lecturer.change_password.form');
+    Route::post('/change-password', [LecturerController::class, 'changePassword'])->name('lecturer.change_password');
 
     // Basic course routes
     Route::get('/courses', [LecturerCourseController::class, 'index'])->name('lecturer.courses');

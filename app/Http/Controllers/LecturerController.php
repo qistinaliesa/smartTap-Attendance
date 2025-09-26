@@ -6,6 +6,7 @@ use App\Models\Lecturer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class LecturerController extends Controller
 {
@@ -168,4 +169,39 @@ class LecturerController extends Controller
         $lecturers = Lecturer::all();
         return view('admin.lecturer', compact('lecturers'));
     }
+    public function showChangePasswordForm()
+{
+    return view('lecturer.change-password');
+}
+
+/**
+ * Handle change password request
+ */
+public function changePassword(Request $request)
+{
+    $request->validate([
+        'current_password' => 'required',
+        'new_password' => 'required|min:8|confirmed',
+    ]);
+
+    $lecturer = Auth::guard('lecturer')->user();
+
+    // Check if current password is correct
+    if (!Hash::check($request->current_password, $lecturer->password)) {
+        return back()->withErrors([
+            'current_password' => 'Current password is incorrect.'
+        ]);
+    }
+
+    // Update password
+    try {
+        $lecturer->update([
+            'password' => Hash::make($request->new_password)
+        ]);
+
+        return back()->with('success', 'Password changed successfully!');
+    } catch (\Exception $e) {
+        return back()->with('error', 'Failed to change password. Please try again.');
+    }
+}
 }

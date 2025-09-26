@@ -90,6 +90,12 @@
                 <span class="menu-title">Attendance</span>
             </a>
          </li>
+         <li class="nav-item">
+            <a class="nav-link" href="{{ route('lecturer.change_password.form') }}">
+                <i class="mdi mdi-lock menu-icon"></i>
+                <span class="menu-title">Change Password</span>
+            </a>
+         </li>
 
          <li class="nav-item">
             <form method="POST" action="{{ route('logout') }}">
