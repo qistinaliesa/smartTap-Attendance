@@ -55,11 +55,25 @@ class DashboardController extends Controller
 
         // Recent attendance with course info (your existing helper)
         $recentAttendance = $this->getRecentAttendanceWithCourse($today);
+// Add total lecturers count
+$totalLecturers = DB::table('lecturers')->count();
 
-        return view('admin.home', compact(
-            'totalStudents', 'present', 'absent',
-            'attendanceByCourse', 'recentAttendance'
-        ));
+// Add average attendance rate for current month
+$currentMonth = Carbon::now()->startOfMonth();
+$attendanceThisMonth = DB::table('attendance')
+    ->whereDate('date', '>=', $currentMonth)
+    ->selectRaw('COUNT(DISTINCT card_id) / COUNT(DISTINCT DATE(date)) as avg_rate')
+    ->value('avg_rate') ?? 0;
+
+$averageAttendanceRate = $totalStudents > 0
+    ? round(($attendanceThisMonth / $totalStudents) * 100, 1)
+    : 0;
+
+      return view('admin.home', compact(
+    'totalStudents', 'present', 'absent',
+    'totalLecturers', 'averageAttendanceRate',  // ADD these
+    'attendanceByCourse', 'recentAttendance'
+));
     }
 
     /**

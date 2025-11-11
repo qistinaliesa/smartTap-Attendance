@@ -28,6 +28,35 @@
         </div>
       </div>
     </div>
+  <div class="modern-stat-card warning">
+  <div class="stat-header">
+    <div class="stat-content">
+      <div class="stat-value">{{ $totalLecturers }}</div>
+      <div class="stat-label">Total Lecturers</div>
+      <div class="stat-trend trend-neutral">
+        <i class="fas fa-chalkboard-teacher"></i> Registered
+      </div>
+    </div>
+    <div class="stat-icon warning">
+      <i class="fas fa-chalkboard-teacher"></i>
+    </div>
+  </div>
+</div>
+
+<div class="modern-stat-card secondary">
+      <div class="stat-header">
+        <div class="stat-content">
+          <div class="stat-value" id="activeCourses">{{ $attendanceByCourse ? $attendanceByCourse->count() : 0 }}</div>
+          <div class="stat-label">Active Courses</div>
+          <div class="stat-trend trend-up">
+            <i class="fas fa-graduation-cap"></i> Currently Running
+          </div>
+        </div>
+        <div class="stat-icon secondary">
+          <i class="fas fa-graduation-cap"></i>
+        </div>
+      </div>
+    </div>
 
     <div class="modern-stat-card success">
       <div class="stat-header">
@@ -61,50 +90,23 @@
       </div>
     </div>
 
-    <div class="modern-stat-card warning">
-      <div class="stat-header">
-        <div class="stat-content">
-          <div class="stat-value" id="lateCount">0</div>
-          <div class="stat-label">Late Arrivals</div>
-          <div class="stat-trend trend-warning">
-            <i class="fas fa-clock"></i> After 9:00 AM
-          </div>
-        </div>
-        <div class="stat-icon warning">
-          <i class="fas fa-clock"></i>
-        </div>
-      </div>
-    </div>
 
     <div class="modern-stat-card info">
-      <div class="stat-header">
-        <div class="stat-content">
-          <div class="stat-value" id="earlyCount">0</div>
-          <div class="stat-label">Early Arrivals</div>
-          <div class="stat-trend trend-up">
-            <i class="fas fa-arrow-up"></i> Before 8:30 AM
-          </div>
-        </div>
-        <div class="stat-icon info">
-          <i class="fas fa-user-clock"></i>
-        </div>
+  <div class="stat-header">
+    <div class="stat-content">
+      <div class="stat-value">{{ $averageAttendanceRate }}%</div>
+      <div class="stat-label">Avg Attendance Rate</div>
+      <div class="stat-trend trend-up">
+        <i class="fas fa-chart-line"></i> This Month
       </div>
     </div>
+    <div class="stat-icon info">
+      <i class="fas fa-chart-line"></i>
+    </div>
+  </div>
+</div>
 
-    <div class="modern-stat-card secondary">
-      <div class="stat-header">
-        <div class="stat-content">
-          <div class="stat-value" id="activeCourses">{{ $attendanceByCourse ? $attendanceByCourse->count() : 0 }}</div>
-          <div class="stat-label">Active Courses</div>
-          <div class="stat-trend trend-up">
-            <i class="fas fa-graduation-cap"></i> Currently Running
-          </div>
-        </div>
-        <div class="stat-icon secondary">
-          <i class="fas fa-graduation-cap"></i>
-        </div>
-      </div>
-    </div>
+
   </div>
 
   <!-- Charts Section -->
@@ -1328,13 +1330,3 @@ console.log('JavaScript loaded successfully');
 </script>
 
 @endsection
-
-
-
-
-
-
-
-
-
-
