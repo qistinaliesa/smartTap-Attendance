@@ -122,7 +122,8 @@
         </div>
       </div>
     </div>
- {{-- Table: All Lecturers --}}
+
+    {{-- Table: All Lecturers --}}
     @if(isset($lecturers) && $lecturers->count())
     <div class="row mt-4">
       <div class="col-md-12">
@@ -155,10 +156,10 @@
                     <td>{{ $lecturer->created_at->format('d/m/Y H:i') }}</td>
                     <td>
                       <button class="btn btn-sm btn-outline-info edit-lecturer"
-                        data-id="{{ $lecturer->id }}" data-toggle="modal"
-                        data-target="#editLecturerModal">Update</button>
+                        data-id="{{ $lecturer->id }}">Update</button>
                       <button class="btn btn-sm btn-outline-danger delete-lecturer"
-                        data-id="{{ $lecturer->id }}" data-name="{{ $lecturer->name }}">Delete</button>
+                        data-id="{{ $lecturer->id }}"
+                        data-name="{{ $lecturer->name }}">Delete</button>
                     </td>
                   </tr>
                   @endforeach
@@ -172,20 +173,22 @@
     @endif
   </div>
 
-  {{-- Edit Lecturer Modal --}}
-  <div class="modal fade" id="editLecturerModal" tabindex="-1" aria-labelledby="editLecturerModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+  {{-- Edit Lecturer Modal - Bootstrap 4 Compatible --}}
+  <div class="modal fade" id="editLecturerModal" tabindex="-1" role="dialog" aria-labelledby="editLecturerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
       <div class="modal-content">
         <form id="editLecturerForm">
           <div class="modal-header">
-            <h5 class="modal-title">Edit Lecturer</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <h5 class="modal-title" id="editLecturerModalLabel">Edit Lecturer</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
           </div>
           <div class="modal-body">
             @csrf
             <input type="hidden" id="edit_lecturer_id">
 
-            <div class="row mb-3">
+            <div class="form-group row">
               <label class="col-sm-4 col-form-label">Full Name</label>
               <div class="col-sm-8">
                 <input type="text" class="form-control" id="edit_name" name="name" required>
@@ -193,7 +196,7 @@
               </div>
             </div>
 
-            <div class="row mb-3">
+            <div class="form-group row">
               <label class="col-sm-4 col-form-label">Email</label>
               <div class="col-sm-8">
                 <input type="email" class="form-control" id="edit_email" name="email" required>
@@ -201,7 +204,7 @@
               </div>
             </div>
 
-            <div class="row mb-3">
+            <div class="form-group row">
               <label class="col-sm-4 col-form-label">Staff ID</label>
               <div class="col-sm-8">
                 <input type="text" class="form-control" id="edit_staff_id" name="staff_id">
@@ -209,7 +212,7 @@
               </div>
             </div>
 
-            <div class="row mb-3">
+            <div class="form-group row">
               <label class="col-sm-4 col-form-label">Kulliyyah</label>
               <div class="col-sm-8">
                 <select class="form-control" id="edit_kulliyyah" name="kulliyyah" required>
@@ -222,7 +225,7 @@
               </div>
             </div>
 
-            <div class="row mb-3">
+            <div class="form-group row">
               <label class="col-sm-4 col-form-label">Department</label>
               <div class="col-sm-8">
                 <select class="form-control" id="edit_department" name="department" required>
@@ -235,15 +238,16 @@
               </div>
             </div>
 
-            <div class="row mb-3">
+            <div class="form-group row">
               <label class="col-sm-4 col-form-label">Password (optional)</label>
               <div class="col-sm-8">
                 <input type="password" class="form-control" id="edit_password" name="password">
+                <small class="form-text text-muted">Leave blank to keep current password</small>
                 <div class="invalid-feedback"></div>
               </div>
             </div>
 
-            <div class="row mb-3">
+            <div class="form-group row">
               <label class="col-sm-4 col-form-label">Confirm Password</label>
               <div class="col-sm-8">
                 <input type="password" class="form-control" id="edit_password_confirmation" name="password_confirmation">
@@ -253,8 +257,7 @@
           </div>
 
           <div class="modal-footer">
-<button type="button" class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
-
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
             <button type="submit" class="btn btn-primary">Update Lecturer</button>
           </div>
         </form>
@@ -267,19 +270,58 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  // Load lecturer data into modal
+  // Load lecturer data into modal when edit button is clicked
   document.querySelectorAll('.edit-lecturer').forEach(button => {
     button.addEventListener('click', function () {
       const id = this.getAttribute('data-id');
-      fetch(/admin/lecturers/${id}/edit)
-        .then(response => response.json())
+
+      // Show loading state
+      Swal.fire({
+        title: 'Loading...',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      // Fetch lecturer data
+      fetch(`/admin/lecturers/${id}/edit`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to fetch lecturer data');
+          }
+          return response.json();
+        })
         .then(data => {
+          // Close loading dialog
+          Swal.close();
+
+          // Populate form fields
           document.getElementById('edit_lecturer_id').value = data.id;
-          document.getElementById('edit_name').value = data.name;
-          document.getElementById('edit_email').value = data.email;
+          document.getElementById('edit_name').value = data.name || '';
+          document.getElementById('edit_email').value = data.email || '';
           document.getElementById('edit_staff_id').value = data.staff_id || '';
-          document.getElementById('edit_kulliyyah').value = data.kulliyyah;
-          document.getElementById('edit_department').value = data.department;
+          document.getElementById('edit_kulliyyah').value = data.kulliyyah || '';
+          document.getElementById('edit_department').value = data.department || '';
+
+          // Clear password fields
+          document.getElementById('edit_password').value = '';
+          document.getElementById('edit_password_confirmation').value = '';
+
+          // Clear any previous validation errors
+          document.querySelectorAll('#editLecturerForm .is-invalid').forEach(el => {
+            el.classList.remove('is-invalid');
+          });
+          document.querySelectorAll('#editLecturerForm .invalid-feedback').forEach(el => {
+            el.textContent = '';
+          });
+
+          // Show the modal
+          $('#editLecturerModal').modal('show');
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          Swal.fire('Error!', 'Failed to load lecturer data. Please try again.', 'error');
         });
     });
   });
@@ -296,7 +338,16 @@ document.addEventListener('DOMContentLoaded', function () {
     form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
     form.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
 
-    fetch(/admin/lecturers/${id}, {
+    // Show loading state
+    Swal.fire({
+      title: 'Updating...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    fetch(`/admin/lecturers/${id}`, {
       method: 'POST',
       headers: {
         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -307,13 +358,19 @@ document.addEventListener('DOMContentLoaded', function () {
       .then(res => res.json())
       .then(data => {
         if (data.success) {
+          $('#editLecturerModal').modal('hide');
           Swal.fire('Updated!', data.message, 'success').then(() => location.reload());
         } else if (data.errors) {
+          Swal.close();
           Object.entries(data.errors).forEach(([key, messages]) => {
-            const input = document.getElementById(edit_${key});
+            const input = document.getElementById(`edit_${key}`);
             const feedback = input?.nextElementSibling;
-            input?.classList.add('is-invalid');
-            if (feedback) feedback.textContent = messages[0];
+            if (input) {
+              input.classList.add('is-invalid');
+              if (feedback && feedback.classList.contains('invalid-feedback')) {
+                feedback.textContent = messages[0];
+              }
+            }
           });
         } else {
           Swal.fire('Error!', data.message || 'Something went wrong.', 'error');
@@ -321,64 +378,63 @@ document.addEventListener('DOMContentLoaded', function () {
       })
       .catch(err => {
         console.error(err);
-        Swal.fire('Error!', 'Update failed.', 'error');
+        Swal.fire('Error!', 'Update failed. Please try again.', 'error');
       });
   });
-  document.getElementById('cancelEditBtn').addEventListener('click', function () {
-    $('#editLecturerModal').modal('hide'); // jQuery method for Bootstrap 4
+
+  // Delete lecturer functionality
+  document.querySelectorAll('.delete-lecturer').forEach(button => {
+    button.addEventListener('click', function() {
+      const lecturerId = this.getAttribute('data-id');
+      const lecturerName = this.getAttribute('data-name');
+
+      Swal.fire({
+        title: 'Are you sure?',
+        text: `You are about to delete ${lecturerName}. This action cannot be undone!`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          fetch(`/admin/lecturers/${lecturerId}`, {
+            method: 'DELETE',
+            headers: {
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+              'Accept': 'application/json',
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              Swal.fire('Deleted!', data.message, 'success').then(() => {
+                location.reload();
+              });
+            } else {
+              Swal.fire('Error!', data.message, 'error');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            Swal.fire('Error!', 'An error occurred while deleting the lecturer.', 'error');
+          });
+        }
+      });
+    });
   });
-    // Delete lecturer functionality
-    document.querySelectorAll('.delete-lecturer').forEach(button => {
-        button.addEventListener('click', function() {
-            const lecturerId = this.getAttribute('data-id');
-            const lecturerName = this.getAttribute('data-name');
 
-            Swal.fire({
-                title: 'Are you sure?',
-                text: You are about to delete ${lecturerName}. This action cannot be undone!,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Yes, delete it!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    fetch(/admin/lecturers/${lecturerId}, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                            'Accept': 'application/json',
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            Swal.fire('Deleted!', data.message, 'success').then(() => {
-                                location.reload();
-                            });
-                        } else {
-                            Swal.fire('Error!', data.message, 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        Swal.fire('Error!', 'An error occurred while deleting the lecturer.', 'error');
-                    });
-                }
-            });
-        });
+  // Clear form validation when modal is hidden
+  $('#editLecturerModal').on('hidden.bs.modal', function() {
+    const form = document.getElementById('editLecturerForm');
+    form.reset();
+    form.querySelectorAll('.is-invalid').forEach(input => {
+      input.classList.remove('is-invalid');
     });
-
-    // Clear form validation on modal close
-    document.getElementById('editLecturerModal').addEventListener('hidden.bs.modal', function() {
-        const form = document.getElementById('editLecturerForm');
-        form.querySelectorAll('.is-invalid').forEach(input => {
-            input.classList.remove('is-invalid');
-        });
-        form.querySelectorAll('.invalid-feedback').forEach(feedback => {
-            feedback.textContent = '';
-        });
+    form.querySelectorAll('.invalid-feedback').forEach(feedback => {
+      feedback.textContent = '';
     });
+  });
 });
 </script>
 

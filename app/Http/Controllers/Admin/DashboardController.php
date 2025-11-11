@@ -953,14 +953,3 @@ private function getMockEnrollmentData($today)
     ->values();
 }
 }
-
-
-
-
-
-
-
-
-
-
-
