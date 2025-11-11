@@ -177,6 +177,9 @@ class LecturerController extends Controller
 /**
  * Handle change password request
  */
+/**
+ * Handle change password request
+ */
 public function changePassword(Request $request)
 {
     $request->validate([
@@ -199,7 +202,15 @@ public function changePassword(Request $request)
             'password' => Hash::make($request->new_password)
         ]);
 
-        return back()->with('success', 'Password changed successfully!');
+        // Log out the lecturer after password change
+        Auth::guard('lecturer')->logout();
+
+        // Invalidate the session
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        // Redirect to login with success message
+        return redirect('/login')->with('success', 'Password changed successfully! Please log in with your new password.');
     } catch (\Exception $e) {
         return back()->with('error', 'Failed to change password. Please try again.');
     }
