@@ -162,7 +162,12 @@ Route::middleware(['lecturer.auth'])->prefix('lecturer')->group(function () {
     // Medical certificate file routes
     Route::get('/courses/{course}/mc/{mc}/download', [LecturerCourseController::class, 'downloadMedicalCertificate'])->name('lecturer.mc.download');
     Route::delete('/courses/{course}/mc/{mc}', [LecturerCourseController::class, 'deleteMedicalCertificate'])->name('lecturer.mc.delete');
+    // NEW: Print attendance routes
+    Route::get('/courses/{course}/available-dates', [LecturerCourseController::class, 'getAvailableDates'])
+        ->name('lecturer.course.available_dates');
 
+    Route::get('/courses/{course}/print-attendance', [LecturerCourseController::class, 'printAttendance'])
+        ->name('lecturer.course.print_attendance');
     // AJAX route to refresh attendance data without page reload
     Route::get('/courses/{course}/attendance-stats', [LecturerCourseController::class, 'getAttendanceStats'])->name('lecturer.course.attendance_stats');
 });

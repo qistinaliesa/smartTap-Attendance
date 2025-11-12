@@ -22,6 +22,21 @@
                                     <i class="mdi mdi-arrow-left"></i> Back to Courses
                                 </a>
                             </div>
+                            <div class="d-flex gap-2">
+    <!-- Take Attendance Button -->
+    <button type="button" class="btn btn-outline-success btn-sm" data-toggle="modal" data-target="#attendanceDateModal">
+        <i class="mdi mdi-calendar-plus"></i> Take Attendance
+    </button>
+
+    <!-- NEW: Print Attendance Button -->
+    <button type="button" class="btn btn-outline-info btn-sm" data-toggle="modal" data-target="#printAttendanceModal">
+        <i class="mdi mdi-printer"></i> Print Attendance
+    </button>
+
+    <a href="{{ route('lecturer.courses') }}" class="btn btn-outline-primary btn-sm">
+        <i class="mdi mdi-arrow-left"></i> Back to Courses
+    </a>
+</div>
                         </div>
 
                         {{-- Attendance Statistics Summary --}}
@@ -113,7 +128,59 @@
                             </div>
                         </div>
 
+<div class="modal fade" id="printAttendanceModal" tabindex="-1" role="dialog" aria-labelledby="printAttendanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="printAttendanceModalLabel">
+                    <i class="mdi mdi-printer"></i> Print Attendance Report
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="printAttendanceForm" action="{{ route('lecturer.course.print_attendance', $course->id) }}" method="GET" target="_blank">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="mdi mdi-information"></i>
+                        <strong>Info:</strong> Select one or multiple dates to include in the PDF report.
+                    </div>
 
+
+  <!-- Date Range Selection -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="printStartDate">Start Date:</label>
+                                <input type="date" class="form-control" id="printStartDate" name="start_date" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="printEndDate">End Date:</label>
+                                <input type="date" class="form-control" id="printEndDate" name="end_date" required>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+
+
+
+
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="mdi mdi-file-pdf"></i> Generate PDF
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
                         {{-- MC/Reason Upload Modal --}}
                         <div class="modal fade" id="mcUploadModal" tabindex="-1" role="dialog" aria-labelledby="mcUploadModalLabel" aria-hidden="true">
                             <div class="modal-dialog" role="document">
@@ -703,7 +770,94 @@ Your Lecturer
 </style>
 
 <script>
+function loadAvailableDates() {
+    const courseId = {{ $course->id }};
+    const container = document.getElementById('availableDatesContainer');
 
+    container.innerHTML = '<p class="text-center"><i class="mdi mdi-loading mdi-spin"></i> Loading dates...</p>';
+
+    fetch(`/lecturer/courses/${courseId}/available-dates`)
+        .then(response => response.json())
+        .then(dates => {
+            if (dates.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">No attendance records found</p>';
+                return;
+            }
+
+            let html = '<div class="row">';
+            dates.forEach((dateInfo, index) => {
+                html += `
+                    <div class="col-md-6 mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input date-checkbox" type="checkbox"
+                                   id="date_${index}" name="dates[]" value="${dateInfo.date}">
+                            <label class="form-check-label" for="date_${index}">
+                                ${dateInfo.formatted_date}
+                                <small class="text-muted">(${dateInfo.present_count}/${dateInfo.total_students} present)</small>
+                            </label>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            html += `
+                <div class="mt-3 text-center">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllDates(true)">
+                        Select All
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectAllDates(false)">
+                        Clear All
+                    </button>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error loading dates:', error);
+            container.innerHTML = '<p class="text-center text-danger">Error loading dates. Please try again.</p>';
+        });
+}
+
+// Select/deselect all dates
+function selectAllDates(select) {
+    const checkboxes = document.querySelectorAll('.date-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = select;
+    });
+}
+
+// Validate form before submission
+document.getElementById('printAttendanceForm').addEventListener('submit', function(e) {
+    const startDate = document.getElementById('printStartDate').value;
+    const endDate = document.getElementById('printEndDate').value;
+    const selectedDates = document.querySelectorAll('.date-checkbox:checked');
+
+     // If using date range
+    if (startDate && endDate) {
+        // Clear specific date selections
+        selectedDates.forEach(cb => cb.checked = false);
+        return true;
+    }
+
+
+
+
+
+
+    if (selectedDates.length > 0) {
+        // Clear date range
+        document.getElementById('printStartDate').value = '';
+        document.getElementById('printEndDate').value = '';
+        return true;
+    }
+
+    // No dates selected
+    e.preventDefault();
+    alert('Please select a date range OR specific dates to print.');
+    return false;
+});
 // Global variable to store current student data for MC upload
 let currentMcStudent = null;
 let currentWarningStudent = null;

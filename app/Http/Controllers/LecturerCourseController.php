@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
+use PDF; // Add this line
+use Barryvdh\DomPDF\Facade\Pdf as PDFService;
 
 use App\Models\Course;
 use App\Models\Enrollment;
@@ -984,5 +986,195 @@ public function sendAttendanceWarning(Request $request, Course $course, $enrollm
         ], 500);
     }
 }
+public function getAvailableDates(Course $course)
+{
+    $lecturer = Auth::guard('lecturer')->user();
 
+    if ($course->lecturer_id !== $lecturer->id) {
+        return response()->json(['error' => 'Unauthorized'], 403);
+    }
+
+    // Get all enrolled students
+    $enrolledCardIds = Enrollment::where('course_id', $course->id)
+        ->with('card')
+        ->get()
+        ->pluck('card.id')
+        ->filter();
+
+    if ($enrolledCardIds->isEmpty()) {
+        return response()->json([]);
+    }
+
+    // Get all dates with attendance records
+    $dates = DB::table('attendance')
+        ->whereIn('card_id', $enrolledCardIds)
+        ->select('date', DB::raw('COUNT(DISTINCT card_id) as present_count'))
+        ->groupBy('date')
+        ->orderBy('date', 'desc')
+        ->get();
+
+    $totalStudents = Enrollment::where('course_id', $course->id)->count();
+
+    $formatted = $dates->map(function($item) use ($totalStudents) {
+        return [
+            'date' => $item->date,
+            'formatted_date' => Carbon::parse($item->date)->format('l, M d, Y'),
+            'present_count' => $item->present_count,
+            'total_students' => $totalStudents,
+            'attendance_rate' => $totalStudents > 0 ? round(($item->present_count / $totalStudents) * 100, 1) : 0
+        ];
+    });
+
+    return response()->json($formatted);
+}
+
+/**
+ * Generate PDF attendance report
+ */
+public function printAttendance(Request $request, Course $course)
+{
+    $lecturer = Auth::guard('lecturer')->user();
+
+    if ($course->lecturer_id !== $lecturer->id) {
+        abort(403, 'Unauthorized');
+    }
+
+    // Get enrolled students
+    $enrolledStudents = Enrollment::where('course_id', $course->id)
+        ->with('card')
+        ->orderBy('id')
+        ->get();
+
+    $enrolledCardIds = $enrolledStudents->pluck('card.id')->filter();
+
+    if ($enrolledCardIds->isEmpty()) {
+        return back()->with('error', 'No students enrolled in this course.');
+    }
+
+    // Determine which dates to include
+    $dates = [];
+
+    if ($request->has('start_date') && $request->has('end_date')) {
+        // Date range selection
+        $startDate = Carbon::parse($request->start_date);
+        $endDate = Carbon::parse($request->end_date);
+
+        $dates = DB::table('attendance')  // ✅ FIXED: Changed to plural
+            ->whereIn('card_id', $enrolledCardIds)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->distinct()
+            ->pluck('date')
+            ->sort()
+            ->values()
+            ->toArray();
+
+    } elseif ($request->has('dates') && is_array($request->dates)) {
+        // Specific dates selection
+        $dates = $request->dates;
+        sort($dates);
+    } else {
+        return back()->with('error', 'Please select dates to print.');
+    }
+
+    if (empty($dates)) {
+        return back()->with('error', 'No attendance records found for selected dates.');
+    }
+
+    // ✅ FIXED: Get attendance records as a flat collection with date as key
+    $attendanceRecords = Attendance::whereIn('card_id', $enrolledCardIds)
+        ->whereIn('date', $dates)
+        ->get()
+        ->map(function($record) {
+            return [
+                'card_id' => $record->card_id,
+                'date' => $record->date
+            ];
+        });
+
+    // ✅ FIXED: Create a lookup set for faster checking
+    $attendanceLookup = $attendanceRecords->map(function($record) {
+        return $record['card_id'] . '|' . $record['date'];
+    })->flip(); // Creates array with keys like "1|2025-11-11"
+
+    // Build attendance data
+    $attendanceData = [];
+
+    foreach ($enrolledStudents as $index => $enrollment) {
+        if (!$enrollment->card) continue;
+
+        $studentData = [
+            'no' => $index + 1,
+            'name' => $enrollment->card->name,
+            'matric_id' => $enrollment->card->matric_id,
+            'card_uid' => $enrollment->card->uid,
+            'attendance' => []
+        ];
+
+        $presentCount = 0;
+
+        foreach ($dates as $date) {
+            // ✅ FIXED: Use lookup key to check attendance
+            $lookupKey = $enrollment->card->id . '|' . $date;
+            $isPresent = isset($attendanceLookup[$lookupKey]);
+
+            $studentData['attendance'][$date] = $isPresent;
+
+            if ($isPresent) {
+                $presentCount++;
+            }
+        }
+
+        $studentData['present_count'] = $presentCount;
+        $studentData['absent_count'] = count($dates) - $presentCount;
+        $studentData['attendance_percentage'] = count($dates) > 0
+            ? round(($presentCount / count($dates)) * 100, 1)
+            : 0;
+
+        // Filter if only showing absent students
+        if ($request->has('absent_only') && $studentData['absent_count'] == 0) {
+            continue;
+        }
+
+        $attendanceData[] = $studentData;
+    }
+
+    // Sort by attendance percentage (lowest first)
+    usort($attendanceData, function($a, $b) {
+        return $a['attendance_percentage'] <=> $b['attendance_percentage'];
+    });
+
+    // Calculate summary statistics
+    $summary = [
+        'total_students' => count($attendanceData),
+        'total_classes' => count($dates),
+        'average_attendance' => count($attendanceData) > 0
+            ? round(array_sum(array_column($attendanceData, 'attendance_percentage')) / count($attendanceData), 1)
+            : 0,
+        'date_range' => count($dates) > 0
+            ? Carbon::parse($dates[0])->format('M d, Y') . ' - ' . Carbon::parse(end($dates))->format('M d, Y')
+            : 'N/A'
+    ];
+
+    // Prepare data for PDF
+    $data = [
+        'course' => $course,
+        'lecturer' => $lecturer,
+        'dates' => array_map(function($date) {
+            return Carbon::parse($date)->format('M d');
+        }, $dates),
+        'full_dates' => $dates, // ✅ Keep full dates for matching
+        'students' => $attendanceData,
+        'summary' => $summary,
+        'include_summary' => $request->has('include_summary'),
+        'generated_at' => Carbon::now()->format('M d, Y H:i A')
+    ];
+
+    // Generate PDF
+    $pdf = PDFService::loadView('lecturer.pdf.attendance-report', $data);
+    $pdf->setPaper('a4', 'landscape');
+
+    $filename = 'Attendance_' . $course->course_code . '_' . date('Ymd_His') . '.pdf';
+
+    return $pdf->download($filename);
+}
 }
