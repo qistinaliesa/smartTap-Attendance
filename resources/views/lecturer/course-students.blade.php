@@ -13,15 +13,7 @@
                                 <h4 class="card-title mb-1">{{ $course->course_code }} - Students</h4>
                                 <p class="text-muted mb-0">Section {{ $course->section }} | {{ $course->credit_hours }} Credit Hours</p>
                             </div>
-                            <div class="d-flex gap-2">
-                                <!-- Take Attendance Button -->
-                                <button type="button" class="btn btn-outline-success btn-sm" data-toggle="modal" data-target="#attendanceDateModal">
-                                    <i class="mdi mdi-calendar-plus"></i> Take Attendance
-                                </button>
-                                <a href="{{ route('lecturer.courses') }}" class="btn btn-outline-primary btn-sm">
-                                    <i class="mdi mdi-arrow-left"></i> Back to Courses
-                                </a>
-                            </div>
+
                             <div class="d-flex gap-2">
     <!-- Take Attendance Button -->
     <button type="button" class="btn btn-outline-success btn-sm" data-toggle="modal" data-target="#attendanceDateModal">
