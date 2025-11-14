@@ -423,9 +423,7 @@ Your Lecturer
                                         </div>
                                     </div>
                                     <div class="modal-footer">
-                                        <button type="button" class="btn btn-outline-primary" id="viewFullAttendanceBtn">
-                                            <i class="mdi mdi-calendar-check"></i> View Full Attendance
-                                        </button>
+
                                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                                     </div>
                                 </div>
@@ -1199,9 +1197,9 @@ function showStudentProfile(studentData) {
     loadMedicalCertificates(studentData.enrollment_id);
 
     // Update the "View Full Attendance" button
-    document.getElementById('viewFullAttendanceBtn').onclick = function() {
-        viewStudentAttendance(studentData.enrollment_id);
-    };
+    // document.getElementById('viewFullAttendanceBtn').onclick = function() {
+    //     viewStudentAttendance(studentData.enrollment_id);
+    // };
 
     // Show the modal
     $('#studentProfileModal').modal('show');
