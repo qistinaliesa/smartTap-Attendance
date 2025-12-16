@@ -238,6 +238,8 @@
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
 
+
+
       <!-- Modal Header -->
       <div class="modal-header bg-warning text-white">
         <h5 class="modal-title" id="emailWarningModalLabel">
@@ -309,9 +311,11 @@ Your Lecturer
 
     </div>
   </div>
+
 </div>
 
 
+*/
                         {{-- Student Profile Modal --}}
                         <div class="modal fade" id="studentProfileModal" tabindex="-1" role="dialog" aria-labelledby="studentProfileModalLabel" aria-hidden="true">
                             <div class="modal-dialog modal-lg" role="document">
@@ -429,6 +433,27 @@ Your Lecturer
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0">
+            <div class="modal-body text-center py-5">
+                <div class="mb-4">
+                    <div class="success-checkmark mx-auto">
+                        <svg width="80" height="80" viewBox="0 0 80 80">
+                            <circle cx="40" cy="40" r="38" fill="#d4edda" stroke="#28a745" stroke-width="2"/>
+                            <path d="M25 40 L35 50 L55 30" fill="none" stroke="#28a745" stroke-width="4" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                </div>
+                <h4 class="mb-3 font-weight-bold" id="successModalTitle">Success!</h4>
+                <p class="text-muted mb-4" id="successModalMessage">Operation completed successfully!</p>
+                <button type="button" class="btn btn-primary px-4" data-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
 
                         @if(count($studentsWithAttendance) > 0)
                             {{-- Students Table with Attendance Percentages --}}
@@ -577,6 +602,46 @@ Your Lecturer
 </div>
 
 <style>
+    .success-checkmark {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+}
+
+.success-checkmark svg {
+    animation: scaleIn 0.3s ease-in-out;
+}
+
+.success-checkmark path {
+    animation: checkmark 0.5s ease-in-out 0.2s forwards;
+    stroke-dasharray: 50;
+    stroke-dashoffset: 50;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes checkmark {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.modal-content {
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+*/
+
+
 .avatar-sm {
     width: 40px;
     height: 40px;
@@ -880,103 +945,77 @@ function showEmailWarningModal(studentData) {
     // Show the modal
     $('#emailWarningModal').modal('show');
 }
+function showSuccessModal(title, message) {
+    document.getElementById('successModalTitle').textContent = title;
+    document.getElementById('successModalMessage').textContent = message;
+    $('#successModal').modal('show');
+}
 
 function handleEmailWarning() {
     if (!currentWarningStudent) {
         console.error('No student selected');
-        alert('No student selected. Please try again.');
+        showSuccessModal('Error', 'No student selected. Please try again.');
         return;
     }
 
-    // Get form values
     const email = document.getElementById('studentEmail').value.trim();
     const subject = document.getElementById('emailSubject').value.trim();
     const message = document.getElementById('emailMessage').value.trim();
 
-    // Enhanced validation
     if (!email || !subject || !message) {
-        alert('Please fill in all required fields.');
+        showSuccessModal('Error', 'Please fill in all required fields.');
         return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-        alert('Please enter a valid email address.');
+        showSuccessModal('Error', 'Please enter a valid email address.');
         return;
     }
 
-    // Get CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     if (!csrfToken) {
         console.error('CSRF token not found');
-        alert('Security token missing. Please refresh the page.');
+        showSuccessModal('Error', 'Security token missing. Please refresh the page.');
         return;
     }
 
-    // Construct URL - FIXED to match your route structure
     const courseId = {{ $course->id ?? 'null' }};
     const enrollmentId = currentWarningStudent.enrollment_id;
 
     if (!courseId || !enrollmentId) {
         console.error('Missing course ID or enrollment ID', { courseId, enrollmentId });
-        alert('Missing required data. Please refresh the page.');
+        showSuccessModal('Error', 'Missing required data. Please refresh the page.');
         return;
     }
 
     const url = `/lecturer/courses/${courseId}/student/${enrollmentId}/send-warning`;
 
-    console.log('=== EMAIL SENDING DEBUG ===');
-    console.log('URL:', url);
-    console.log('Course ID:', courseId);
-    console.log('Enrollment ID:', enrollmentId);
-    console.log('CSRF Token:', csrfToken ? 'Present' : 'Missing');
-    console.log('Email data:', { email, subject, messageLength: message.length });
-
-    // Show loading state
     const submitBtn = document.querySelector('#emailWarningForm button[type="submit"]');
     const originalBtnText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Sending...';
     submitBtn.disabled = true;
 
-    // Create FormData with proper structure
     const formData = new FormData();
     formData.append('email', email);
     formData.append('subject', subject);
     formData.append('message', message);
     formData.append('_token', csrfToken);
 
-    // Debug FormData
-    console.log('FormData contents:');
-    for (let [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
-    }
-
-    // Make the request
     fetch(url, {
         method: 'POST',
         headers: {
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
-            // Don't set Content-Type or X-CSRF-TOKEN when using FormData
         },
         body: formData
     })
     .then(async response => {
-        console.log('Response received:', {
-            status: response.status,
-            statusText: response.statusText,
-            ok: response.ok,
-            headers: Object.fromEntries(response.headers.entries())
-        });
-
         const responseText = await response.text();
-        console.log('Raw response text:', responseText);
 
-        // Check if response is OK
         if (!response.ok) {
             let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
 
-            // Try to parse error response
             try {
                 const errorData = JSON.parse(responseText);
                 if (errorData.message) errorMessage = errorData.message;
@@ -985,33 +1024,27 @@ function handleEmailWarning() {
                     errorMessage = Object.values(errorData.errors).flat().join(', ');
                 }
             } catch (e) {
-                // If JSON parsing fails, use the raw response
                 if (responseText) errorMessage = responseText;
             }
 
             throw new Error(errorMessage);
         }
 
-        // Parse successful response
         try {
             const data = JSON.parse(responseText);
-            console.log('Parsed response:', data);
             return data;
         } catch (parseError) {
-            console.error('JSON Parse Error:', parseError);
-            console.error('Response was:', responseText);
             throw new Error(`Server returned invalid JSON: ${responseText.substring(0, 200)}...`);
         }
     })
     .then(data => {
-        console.log('Success response:', data);
-
         if (data.success) {
-            // Success
-            alert(`✅ ${data.message}`);
             $('#emailWarningModal').modal('hide');
 
-            // Optional: Add visual indicator that email was sent
+            // Show success modal instead of alert
+            showSuccessModal('Email Sent!', data.message || 'Warning email sent successfully!');
+
+            // Update UI
             const studentRow = document.querySelector(`tr[data-enrollment-id="${enrollmentId}"]`);
             if (studentRow) {
                 const warningBtn = studentRow.querySelector('.btn-outline-danger');
@@ -1023,17 +1056,10 @@ function handleEmailWarning() {
                 }
             }
         } else {
-            // Server returned success:false
-            console.error('Server error:', data);
-            alert(`❌ Error: ${data.error || data.message || 'Unknown server error'}`);
+            showSuccessModal('Error', data.error || data.message || 'Unknown server error');
         }
     })
     .catch(error => {
-        console.error('=== EMAIL SEND ERROR ===');
-        console.error('Error:', error);
-        console.error('Error message:', error.message);
-
-        // User-friendly error messages
         let userMessage = 'Failed to send email: ';
 
         if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
@@ -1052,14 +1078,14 @@ function handleEmailWarning() {
             userMessage += error.message;
         }
 
-        alert(`❌ ${userMessage}`);
+        showSuccessModal('Error', userMessage);
     })
     .finally(() => {
-        // Restore button state
         submitBtn.innerHTML = originalBtnText;
         submitBtn.disabled = false;
     });
 }
+
 
 // Form submission handler
 document.addEventListener('DOMContentLoaded', function() {
@@ -1349,33 +1375,17 @@ document.addEventListener('DOMContentLoaded', function() {
 // Replace your existing handleMcUpload function with this one:
 
 function handleMcUpload() {
-    console.log('handleMcUpload called');
-
     if (!currentMcStudent) {
-        alert('No student selected. Please try again.');
+        showSuccessModal('Error', 'No student selected. Please try again.');
         return;
     }
 
-    // Get form values
     const selectedDate = document.getElementById('mcAbsentDate').value;
     const reason = document.getElementById('mcReason').value;
     const fileInput = document.getElementById('mcFile');
 
-    console.log('Selected date:', selectedDate);
-    console.log('Reason:', reason);
-    console.log('File input:', fileInput);
-    console.log('Has file:', fileInput.files.length > 0);
-
-    if (fileInput.files.length > 0) {
-        console.log('File details:', {
-            name: fileInput.files[0].name,
-            size: fileInput.files[0].size,
-            type: fileInput.files[0].type
-        });
-    }
-
     if (!selectedDate || !reason.trim()) {
-        alert('Please fill in all required fields.');
+        showSuccessModal('Error', 'Please fill in all required fields.');
         return;
     }
 
@@ -1383,32 +1393,18 @@ function handleMcUpload() {
     const enrollmentId = currentMcStudent.enrollment_id;
     const url = `/lecturer/courses/${courseId}/student/${enrollmentId}/mark-present`;
 
-    console.log('URL:', url);
-    console.log('Course ID:', courseId);
-    console.log('Enrollment ID:', enrollmentId);
-
-    // Show loading state
     const submitBtn = document.querySelector('#mcUploadForm button[type="submit"]');
     const originalBtnText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Uploading...';
     submitBtn.disabled = true;
 
-    // FIXED: Use FormData to properly handle file uploads
     const formData = new FormData();
     formData.append('date', selectedDate);
     formData.append('reason', reason.trim());
     formData.append('_token', '{{ csrf_token() }}');
 
-    // Add file if selected
     if (fileInput.files.length > 0) {
         formData.append('mc_file', fileInput.files[0]);
-        console.log('File added to FormData:', fileInput.files[0].name);
-    }
-
-    // DEBUG: Log FormData contents
-    console.log('FormData contents:');
-    for (let [key, value] of formData.entries()) {
-        console.log(key, value);
     }
 
     fetch(url, {
@@ -1416,42 +1412,35 @@ function handleMcUpload() {
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}',
             'Accept': 'application/json'
-            // DON'T set Content-Type when using FormData - let browser set it automatically
         },
-        body: formData // Use FormData instead of JSON
+        body: formData
     })
-    .then(response => {
-        console.log('Response received:', response);
-        console.log('Status:', response.status);
-        console.log('Status text:', response.statusText);
-
-        return response.text(); // Get as text first to see what we're getting
-    })
+    .then(response => response.text())
     .then(text => {
-        console.log('Response text:', text);
-
         try {
             const data = JSON.parse(text);
-            console.log('Parsed JSON:', data);
 
             if (data.success) {
-                alert('Success: ' + data.message);
-                if (data.debug) {
-                    console.log('Upload debug info:', data.debug);
-                }
                 $('#mcUploadModal').modal('hide');
-                location.reload(); // Refresh to see the updated data
+
+                // Show success modal instead of alert
+                showSuccessModal('Updated!', data.message || 'MC uploaded and student marked present successfully!');
+
+                // Reload after modal is closed
+                $('#successModal').on('hidden.bs.modal', function () {
+                    location.reload();
+                });
             } else {
-                alert('Error: ' + (data.error || 'Unknown error'));
+                showSuccessModal('Error', data.error || 'Unknown error occurred');
             }
         } catch (e) {
             console.error('JSON parse error:', e);
-            alert('Server returned invalid response. Check console for details.');
+            showSuccessModal('Error', 'Server returned invalid response. Please try again.');
         }
     })
     .catch(error => {
         console.error('Fetch error:', error);
-        alert('Network error: ' + error.message);
+        showSuccessModal('Error', 'Network error: ' + error.message);
     })
     .finally(() => {
         submitBtn.innerHTML = originalBtnText;
@@ -1572,6 +1561,11 @@ function displayMedicalCertificates(medicalCertificates) {
 
     html += '</div>';
     container.innerHTML = html;
+}
+function showSuccessModal(title, message) {
+    document.getElementById('successModalTitle').textContent = title;
+    document.getElementById('successModalMessage').textContent = message;
+    $('#successModal').modal('show');
 }
 </script>
 @endsection
