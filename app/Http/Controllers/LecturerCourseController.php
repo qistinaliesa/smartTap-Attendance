@@ -162,16 +162,23 @@ class LecturerCourseController extends Controller
         round($totalAttendanceSum / $enrolledStudents->count(), 1) : 0;
 
     // Sort by attendance percentage (lowest first to highlight problems)
-    usort($studentsWithAttendance, function($a, $b) {
-        return $a['attendance_percentage'] <=> $b['attendance_percentage'];
-    });
+   // Sort by attendance percentage (lowest first to highlight problems)
+usort($studentsWithAttendance, function($a, $b) {
+    return $a['attendance_percentage'] <=> $b['attendance_percentage'];
+});
 
-    $attendanceStats = [
-        'total_students' => $enrolledStudents->count(),
-        'average_attendance' => $averageAttendance,
-        'total_warnings' => $totalWarnings,
-        'total_classes' => $totalClasses
-    ];
+// ✅ Reassign sequential numbers after sorting
+foreach ($studentsWithAttendance as $index => &$studentData) {
+    $studentData['index'] = $index + 1;
+}
+unset($studentData); // Break the reference
+
+$attendanceStats = [
+    'total_students' => $enrolledStudents->count(),
+    'average_attendance' => $averageAttendance,
+    'total_warnings' => $totalWarnings,
+    'total_classes' => $totalClasses
+];
 
     return view('lecturer.course-students', compact(
         'course',
