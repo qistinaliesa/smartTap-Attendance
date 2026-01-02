@@ -83,13 +83,13 @@
                 <span class="menu-title">My Classes</span>
             </a>
         </li>
-
+{{--
         <li class="nav-item">
             <a class="nav-link" href="{{ route('attendance.index') }}">
                 <i class="mdi mdi-view-headline menu-icon"></i>
                 <span class="menu-title">Attendance</span>
             </a>
-         </li>
+         </li> --}}
          <li class="nav-item">
             <a class="nav-link" href="{{ route('lecturer.change_password.form') }}">
                 <i class="mdi mdi-lock menu-icon"></i>
@@ -159,12 +159,7 @@
           @yield('content')
         </main>
 
-        <footer class="footer mt-auto">
-          <div class="card">
 
-
-          </div>
-        </footer>
 
       </div>
 

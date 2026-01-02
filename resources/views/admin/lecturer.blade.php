@@ -238,7 +238,7 @@
               </div>
             </div>
 
-            <div class="form-group row">
+            {{-- <div class="form-group row">
               <label class="col-sm-4 col-form-label">Password (optional)</label>
               <div class="col-sm-8">
                 <input type="password" class="form-control" id="edit_password" name="password">
@@ -254,7 +254,7 @@
                 <div class="invalid-feedback"></div>
               </div>
             </div>
-          </div>
+          </div> --}}
 
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -305,8 +305,8 @@ document.addEventListener('DOMContentLoaded', function () {
           document.getElementById('edit_department').value = data.department || '';
 
           // Clear password fields
-          document.getElementById('edit_password').value = '';
-          document.getElementById('edit_password_confirmation').value = '';
+        //   document.getElementById('edit_password').value = '';
+        //   document.getElementById('edit_password_confirmation').value = '';
 
           // Clear any previous validation errors
           document.querySelectorAll('#editLecturerForm .is-invalid').forEach(el => {

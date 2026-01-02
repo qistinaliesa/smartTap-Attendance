@@ -75,22 +75,22 @@
 
 /* Light Blue */
 .course-card-1 {
-    background: #B8E6E6 !important;
+    background: #1eaeae !important;
 }
 
 /* Light Yellow */
 .course-card-2 {
-    background: #F5E6A3 !important;
+    background: #f5c536 !important;
 }
 
 /* Light Pink */
 .course-card-3 {
-    background: #F4C2C2 !important;
+    background: #e48484 !important;
 }
 
 /* Light Purple */
 .course-card-4 {
-    background: #D1B3E6 !important;
+    background: #ba7be8 !important;
 }
 
 /* Light Green */
@@ -110,21 +110,21 @@
 .course-code {
     font-size: 18px;
     font-weight: bold;
-    color: #2c3e50;
+    color: #ffffff;
     margin-bottom: 8px;
     line-height: 1.2;
 }
 
 .course-section {
     font-size: 14px;
-    color: #34495e;
+    color: #ffffff;
     margin-bottom: 5px;
     font-weight: 500;
 }
 
 .credit-hours {
     font-size: 12px;
-    color: #7f8c8d;
+    color: #ffffff;
     display: block;
 }
 </style>
